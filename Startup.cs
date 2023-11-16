@@ -22,17 +22,11 @@ namespace ZenDeskAutomation
         /// <param name="builder">Builder.</param>
         public override void ConfigureAppConfiguration(IFunctionsConfigurationBuilder builder)
         {
-            //var config = builder.ConfigurationBuilder
-            //    .SetBasePath(Environment.CurrentDirectory)
-            //    .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
-            //    .AddEnvironmentVariables()
-            //    .Build();
-
-            //var keyVaultUri = config["Values:KeyVaultUri"];
-
-            //builder.ConfigurationBuilder.AddAzureKeyVault(
-            //    new Uri(keyVaultUri),
-            //    new DefaultAzureCredential());
+            builder.ConfigurationBuilder
+                .SetBasePath(Environment.CurrentDirectory)
+                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
         }
 
 
