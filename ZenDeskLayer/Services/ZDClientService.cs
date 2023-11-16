@@ -66,7 +66,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             HttpClient httpClient = GetZenDeskHttpClient();
 
             // Make the API request
-            HttpResponseMessage response = await httpClient.PostAsync(Environment.GetEnvironmentVariable("ZenDesk:ApiEndPoints:CreateTicket"), content);
+            HttpResponseMessage response = await httpClient.PostAsync(_configuration["ZenDesk:ApiEndPoints:CreateTicket"], content);
 
             // Check if the request was successful
             if (response.IsSuccessStatusCode)
@@ -120,11 +120,11 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             HttpClient httpClient = _httpClientFactory.CreateClient();
 
             // Use the configured base URL from options
-            httpClient.BaseAddress = new Uri(Environment.GetEnvironmentVariable("ZenDesk:AppConfigurations:BaseURL"));
+            httpClient.BaseAddress = new Uri(_configuration["ZenDesk:AppConfigurations:BaseURL"]);
 
             // Get username and password from options
-            string username = Environment.GetEnvironmentVariable("ZenDesk:AppConfigurations:UserName");
-            string password = Environment.GetEnvironmentVariable("ZenDesk:AppConfigurations:Password");
+            string username = _configuration["ZenDesk:AppConfigurations:UserName"];
+            string password = _configuration["ZenDesk:AppConfigurations:Password"];
 
             // Convert the username and password to Base64
             string base64Credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));

@@ -68,7 +68,7 @@ namespace ZenDeskAutomation
                 {
                     _logger.LogInformation("Task started");
 
-                    string CRMConnectionString = Environment.GetEnvironmentVariable("DataBase:CRMConnectionString");
+                    string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
 
                     var sqlParams = new Dictionary<string, object>
                     {
