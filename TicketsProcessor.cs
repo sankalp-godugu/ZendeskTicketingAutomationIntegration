@@ -68,6 +68,8 @@ namespace ZenDeskAutomation
 
                     string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
 
+                    _logger.LogInformation("Received CRM connection string:", CRMConnectionString);
+
                     var sqlParams = new Dictionary<string, object>
                     {
                         {"@date", _configuration["CurrentDate"]},
@@ -77,6 +79,8 @@ namespace ZenDeskAutomation
                     var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetMemberCaseTicketsForZenDesk, sqlParams, CRMConnectionString, _logger);
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
+
+                    _logger.LogInformation("Received BR connection string:", brConnectionString);
 
                     _logger.LogInformation($"Received case management tickets with count: {caseManagementTickets?.Count}");
 
