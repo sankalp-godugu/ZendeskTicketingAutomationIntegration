@@ -39,10 +39,9 @@ namespace ZenDeskAutomation
         /// <param name="log">Logger.<see cref="ILogger"/></param>
         /// <param name="dataLayer">Datalayer.<see cref="IDataLayer"/></param>
         /// <param name="configuration">Configuration.<see cref="IConfiguration"/></param>
-        public TicketsProcessor(ILogger<TicketsProcessor> log, IDataLayer dataLayer, IConfiguration configuration,
+        public TicketsProcessor(IDataLayer dataLayer, IConfiguration configuration,
             IZDClientService zdClientService)
         {
-            _logger = log ?? throw new ArgumentNullException(nameof(log));
             _dataLayer = dataLayer ?? throw new ArgumentNullException(nameof(dataLayer));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _zdClientService = zdClientService ?? throw new ArgumentNullException(nameof(zdClientService));
@@ -56,7 +55,7 @@ namespace ZenDeskAutomation
         [OpenApiOperation(operationId: "Run", tags: new[] { "name" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response message containing a JSON result.")]
-        public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req)
+        public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger _logger)
         {
             try
             {
