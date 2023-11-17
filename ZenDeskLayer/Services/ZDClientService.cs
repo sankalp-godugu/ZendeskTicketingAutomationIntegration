@@ -157,47 +157,36 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         private StringContent GetRequestBodyForZenDesk(CaseTickets caseTicket)
         {
             string zenDeskSubject = $"Member ID: {caseTicket.NHMemberID} with name {caseTicket.FirstName} {caseTicket.LastName} for health plan id {caseTicket.InsuranceHealthPlanID}";
+
             // Create the dynamic object
-            dynamic jsonObject = new
+            var dynamicTicket = new
             {
                 ticket = new
                 {
                     assignee_email = _configuration["Email"],
+                    brand_id = 17859146467479,
                     description = caseTicket.CaseTicketData,
-                    subject = zenDeskSubject,
                     custom_fields = new[]
                     {
-                        new
-                        {
-                            id = _configuration["TicketFormId"],
-                            value = _configuration["TicketFormValue"]
-                        },
-                        new
-                        {
-                            id = _configuration["MemberId"],
-                            value = caseTicket.NHMemberID
-                        },
-                        new
-                        {
-                            id = _configuration["WhoIsContactingId"],
-                            value = _configuration["WhoIsContactingValue"]
-                        },
-                        new
-                        {
-                            id = _configuration["SubjectId"],
-                            value = zenDeskSubject
-                        },
-                        new
-                        {
-                            id = _configuration["DescriptionId"],
-                            value = caseTicket.CaseTicketData
-                        },
-                    }
+                        new { id = 17909776781591, value = caseTicket.NHMemberID },
+                        new { id = 18660702946583, value = caseTicket.FirstName },
+                        new { id = 18922143671703, value = caseTicket.MemberID.ToString() }
+                    },
+                    email_ccs = new[]
+                    {
+                        new { user_email = _configuration["Email"], action = "put" }
+                    },
+                    priority = "low",
+                    requester = new { email = _configuration["Email"] },
+                    status = "new",
+                    subject = zenDeskSubject,
+                    ticket_form_id = 18750942842647,
+                    tags = new List<string>()
                 }
             };
 
             // Serialize the dynamic object to JSON
-            string jsonPayload = JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
+            string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
 
             // Create StringContent from JSON payload
             StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
