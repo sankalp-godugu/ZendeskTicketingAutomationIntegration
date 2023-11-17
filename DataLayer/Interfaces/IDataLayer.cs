@@ -16,5 +16,17 @@ namespace ZenDeskAutomation.DataLayer.Interfaces
         /// <param name="logger">Logger</param>
         /// <returns>The result of the stored procedure as a byte array.</returns>
         Task<List<T>> ExecuteReader<T>(string procedureName, Dictionary<string, object> parameters, string connectionString, ILogger logger);
+
+
+        /// <summary>
+        /// Inserts the data into the table.
+        /// </summary>
+        /// <typeparam name="T">Generic parameter.</typeparam>
+        /// <param name="procedureName">Procedure name.</param>
+        /// <param name="parameters">Parameters.</param>
+        /// <param name="connectionString">Connection string.</param>
+        /// <param name="logger">Logger</param>
+        /// <returns>Returns the collection of objects.</returns>
+        Task<int> ExecuteNonQuery(string procedureName, long caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger);
     }
 }

@@ -15,7 +15,6 @@ using Microsoft.OpenApi.Models;
 using ZenDeskAutomation.DataLayer.Interfaces;
 using ZenDeskAutomation.Utilities;
 using ZenDeskAutomation.ZenDeskLayer.Interfaces;
-using ZenDeskAutomation.ZenDeskLayer.Services;
 using ZenDeskTicketProcessJob.Models;
 
 namespace ZenDeskAutomation
@@ -56,7 +55,6 @@ namespace ZenDeskAutomation
         [FunctionName("TicketsProcessor")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "name" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiParameter(name: "name", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **Name** parameter")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response message containing a JSON result.")]
         public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req)
         {
@@ -72,14 +70,52 @@ namespace ZenDeskAutomation
 
                     var sqlParams = new Dictionary<string, object>
                     {
-                        {"@date", "2021-12-31"},
+                        {"@date", _configuration["CurrentDate"]},
+                        {"@count", _configuration["Count"] }
                     };
 
                     var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetMemberCaseTicketsForZenDesk, sqlParams, CRMConnectionString, _logger);
 
-                    foreach(var caseManagementTicket in caseManagementTickets)
+                    string brConnectionString = _configuration["DataBase:BRConnectionString"];
+
+                    _logger.LogInformation($"Received case management tickets with count: {caseManagementTickets?.Count}");
+
+                    foreach (var caseManagementTicket in caseManagementTickets)
                     {
-                        await _zdClientService.CreateTicketInZenDeskAsync(caseManagementTicket);
+                        if (caseManagementTicket.ZendeskTicket != null && caseManagementTicket.ZendeskTicket.Length > 0)
+                        {
+                            _logger.LogInformation($"Started updating ticket via = zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+
+                            var ticketNumberReference = await _zdClientService.UpdateTicketInZenDeskAsync(caseManagementTicket);
+
+                            _logger.LogInformation($"Successfully updated zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"Started creating ticket via = zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+
+                            var ticketNumberReference = await _zdClientService.CreateTicketInZenDeskAsync(caseManagementTicket);
+
+                            _logger.LogInformation($"Successfully created zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+
+                            var updateParams = new Dictionary<string, object>
+                            {
+                                {"@CaseTicketID", caseManagementTicket.CaseTicketID},
+                                {"@ZenDeskTicketID", ticketNumberReference }
+                            };
+
+                            var result = await _dataLayer.ExecuteNonQuery(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
+
+                            if (result == 1)
+                            {
+                                _logger.LogInformation($"Updated the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}");
+                            }
+                            else
+                            {
+                                _logger.LogError($"Failed to update the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}");
+                            }
+                        }
                     }
 
                     _logger.LogInformation("Task ended");
@@ -92,6 +128,7 @@ namespace ZenDeskAutomation
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Failed with an exception with message: {ex.Message}");
                 return new BadRequestObjectResult(ex.Message);
             }
         }

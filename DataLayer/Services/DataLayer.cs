@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using Dapper;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <returns>The collection of objects returned from the executed query.</returns>
         public async Task<List<T>> ExecuteReader<T>(string procedureName, Dictionary<string, object> parameters, string connectionString, ILogger logger)
         {
+            logger.LogInformation($"Started calling stored procedure {procedureName} with parameters: {string.Join(", ", parameters.Select(p => $"{p.Key} = {p.Value}"))}");
             List<T> list = new List<T>();
             using (SqlConnection sqlConnection = new SqlConnection(connectionString))
             {
@@ -58,7 +60,65 @@ namespace ZenDeskAutomation.DataLayer.Services
                     sqlConnection.Close();
                 }
             }
+            logger.LogInformation($"Ended calling stored procedure {procedureName}");
             return list;
+        }
+
+        /// <summary>
+        /// Inserts the data into the table.
+        /// </summary>
+        /// <typeparam name="T">Generic parameter.</typeparam>
+        /// <param name="procedureName">Procedure name.</param>
+        /// <param name="caseTicketId">Case ticket id</param>
+        /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
+        /// <param name="logger">Logger</param>
+        /// <param name="connectionString">Connection string.</param>
+        /// <returns>Returns the collection of objects.</returns>
+        public async Task<int> ExecuteNonQuery(string procedureName, long caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (SqlCommand command = new SqlCommand(procedureName, connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    // Input parameters
+                    command.Parameters.AddWithValue("@CaseTicketID", caseTicketId);
+                    command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
+
+                    // Output parameter
+                    SqlParameter resultParameter = new SqlParameter("@Result", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    command.Parameters.Add(resultParameter);
+
+                    try
+                    {
+                        await command.ExecuteNonQueryAsync();
+
+                        // Retrieve the result code
+                        int result = (int)resultParameter.Value;
+
+                        // Log the result
+                        logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
+
+                        return result;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
+                        throw;
+                    }
+                    finally
+                    {
+                        // Close the connection in the finally block to ensure it is closed even in case of an exception
+                        connection.Close();
+                    }
+                }
+            }
         }
 
         #region Private Methods

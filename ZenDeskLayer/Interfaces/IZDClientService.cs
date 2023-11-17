@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using ZenDeskAutomation.Models;
 using ZenDeskTicketProcessJob.Models;
 
 namespace ZenDeskAutomation.ZenDeskLayer.Interfaces
@@ -14,22 +10,21 @@ namespace ZenDeskAutomation.ZenDeskLayer.Interfaces
     public interface IZDClientService
     {
         /// <summary>
-        /// 
+        /// Creates the ticket in zendesk asychronously.
         /// </summary>
-        /// <returns></returns>
-        public Task<string> CreateTicketInZenDeskAsync(CaseTickets caseTickets);
+        /// <returns>Returns the response model on success; exception on failure.</returns>
+        public Task<long> CreateTicketInZenDeskAsync(CaseTickets caseTickets);
 
         /// <summary>
-        /// 
+        /// Update the ticket in zendesk.
         /// </summary>
-        /// <returns></returns>
-        public string UpdateTicketInZenDesk();
+        /// <param name="caseTicket">Case ticket.</param>
+        public Task<string> UpdateTicketInZenDeskAsync(CaseTickets caseTicket);
 
 
         /// <summary>
-        /// 
+        /// Gets the list of tickets from zendesk.
         /// </summary>
-        /// <returns></returns>
         public List<string> GetListOfTickets();
     }
 }
