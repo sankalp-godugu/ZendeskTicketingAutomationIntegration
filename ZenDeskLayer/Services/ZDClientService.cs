@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using ZenDeskAutomation.Models;
 using ZenDeskAutomation.ZenDeskLayer.Interfaces;
 using ZenDeskTicketProcessJob.Models;
 
@@ -35,7 +34,6 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
         #endregion
-
 
         #region Public Methods
 
@@ -89,7 +87,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// Update the ticket in zendesk.
         /// </summary>
         /// <param name="caseTicket">Case ticket.</param>
-        public async Task<string> UpdateTicketInZenDeskAsync(CaseTickets caseTicket)
+        public async Task<long> UpdateTicketInZenDeskAsync(CaseTickets caseTicket)
         {
             StringContent content = GetRequestBodyForZenDesk(caseTicket);
 
@@ -109,7 +107,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 JObject jsonResponse = JObject.Parse(responseContent);
 
                 // Get the value of a specific property
-                string ticketIdentifier = jsonResponse["ticket"]["id"]?.ToString();
+                long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
 
                 // Return the deserialized response
                 return ticketIdentifier;
@@ -158,19 +156,30 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         {
             string zenDeskSubject = $"Member ID: {caseTicket.NHMemberID} with name {caseTicket.FirstName} {caseTicket.LastName} for health plan id {caseTicket.InsuranceHealthPlanID}";
 
+            //Fetches the values from the configuration.
+            string brandValue = _configuration["BrandValue"] ?? "";
+            string ticketFormValue = _configuration["TicketFormValue"] ?? "";
+            string subject = _configuration["Subject"] ?? "";
+            string description = _configuration["Description"] ?? "";
+            string nhMemberID = _configuration["NHMemberID"] ?? "";
+            string memberName = _configuration["MemberName"] ?? "";
+            string carrierName = _configuration["Carrier"] ?? "";
+            string contactType = _configuration["ContactType"] ?? "";
+            string requestType = _configuration["RequestType"] ?? "";
+            string IssueRelated = _configuration["IssueRelated"] ?? "";
+            
             // Create the dynamic object
             var dynamicTicket = new
             {
                 ticket = new
                 {
                     assignee_email = _configuration["Email"],
-                    brand_id = 17859146467479,
+                    brand_id = brandValue,
                     description = caseTicket.CaseTicketData,
                     custom_fields = new[]
                     {
-                        new { id = 17909776781591, value = caseTicket.NHMemberID },
-                        new { id = 18660702946583, value = caseTicket.FirstName },
-                        new { id = 18922143671703, value = caseTicket.MemberID.ToString() }
+                        new { id = nhMemberID, value = caseTicket?.NHMemberID },
+                        new { id = memberName, value = caseTicket?.FirstName + caseTicket?.LastName }
                     },
                     email_ccs = new[]
                     {
@@ -180,7 +189,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     requester = new { email = _configuration["Email"] },
                     status = "new",
                     subject = zenDeskSubject,
-                    ticket_form_id = 18750942842647,
+                    ticket_form_id = ticketFormValue,
                     tags = new List<string>()
                 }
             };

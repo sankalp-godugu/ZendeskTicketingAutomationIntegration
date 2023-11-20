@@ -19,7 +19,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Interfaces
         /// Update the ticket in zendesk.
         /// </summary>
         /// <param name="caseTicket">Case ticket.</param>
-        public Task<string> UpdateTicketInZenDeskAsync(CaseTickets caseTicket);
+        public Task<long> UpdateTicketInZenDeskAsync(CaseTickets caseTicket);
 
 
         /// <summary>

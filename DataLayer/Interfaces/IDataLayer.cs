@@ -23,7 +23,8 @@ namespace ZenDeskAutomation.DataLayer.Interfaces
         /// </summary>
         /// <typeparam name="T">Generic parameter.</typeparam>
         /// <param name="procedureName">Procedure name.</param>
-        /// <param name="parameters">Parameters.</param>
+        /// <param name="caseTicketId">Case ticket id</param>
+        /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="logger">Logger</param>
         /// <returns>Returns the collection of objects.</returns>

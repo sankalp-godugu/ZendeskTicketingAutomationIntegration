@@ -67,8 +67,6 @@ namespace ZenDeskAutomation
 
                     string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
 
-                    _logger.LogInformation("Received CRM connection string:", CRMConnectionString);
-
                     var sqlParams = new Dictionary<string, object>
                     {
                         {"@date", _configuration["CurrentDate"]},
@@ -79,19 +77,19 @@ namespace ZenDeskAutomation
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
 
-                    _logger.LogInformation("Received BR connection string:", brConnectionString);
-
                     _logger.LogInformation($"Received case management tickets with count: {caseManagementTickets?.Count}");
 
                     foreach (var caseManagementTicket in caseManagementTickets)
                     {
-                        if (caseManagementTicket.ZendeskTicket != null && caseManagementTicket.ZendeskTicket.Length > 0)
+                        if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && caseManagementTicket?.ZendeskTicket?.Length > 0)
                         {
                             _logger.LogInformation($"Started updating ticket via = zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
                             var ticketNumberReference = await _zdClientService.UpdateTicketInZenDeskAsync(caseManagementTicket);
 
                             _logger.LogInformation($"Successfully updated zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+
+                            await UpdatesZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference);
 
                         }
                         else
@@ -102,22 +100,7 @@ namespace ZenDeskAutomation
 
                             _logger.LogInformation($"Successfully created zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
-                            var updateParams = new Dictionary<string, object>
-                            {
-                                {"@CaseTicketID", caseManagementTicket.CaseTicketID},
-                                {"@ZenDeskTicketID", ticketNumberReference }
-                            };
-
-                            var result = await _dataLayer.ExecuteNonQuery(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
-
-                            if (result == 1)
-                            {
-                                _logger.LogInformation($"Updated the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}");
-                            }
-                            else
-                            {
-                                _logger.LogError($"Failed to update the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}");
-                            }
+                            await UpdatesZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference);
                         }
                     }
 
@@ -133,6 +116,27 @@ namespace ZenDeskAutomation
             {
                 _logger.LogError($"Failed with an exception with message: {ex.Message}");
                 return new BadRequestObjectResult(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Updates the zendesk ticket reference and is processed status.
+        /// </summary>
+        /// <param name="_logger">Logger.</param>
+        /// <param name="brConnectionString">BR connection string.</param>
+        /// <param name="caseManagementTicket">Case management ticket.</param>
+        /// <param name="ticketNumberReference">Ticket number reference.</param>
+        private async Task UpdatesZendeskTicketReferenceAndIsProcessedStatus(ILogger _logger, string brConnectionString, CaseTickets caseManagementTicket, long ticketNumberReference)
+        {
+            var result = await _dataLayer.ExecuteNonQuery(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
+
+            if (result == 1)
+            {
+                _logger.LogInformation($"Updated the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}.");
+            }
+            else
+            {
+                _logger.LogError($"Failed to update the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}.");
             }
         }
 

@@ -70,6 +70,7 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <typeparam name="T">Generic parameter.</typeparam>
         /// <param name="procedureName">Procedure name.</param>
         /// <param name="caseTicketId">Case ticket id</param>
+        /// <param name="isProcessed">Is processed.</param>
         /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
         /// <param name="logger">Logger</param>
         /// <param name="connectionString">Connection string.</param>
