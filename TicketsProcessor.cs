@@ -73,7 +73,7 @@ namespace ZenDeskAutomation
                         {"@count", _configuration["Count"] }
                     };
 
-                    var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetMemberCaseTicketsForZenDesk, sqlParams, CRMConnectionString, _logger);
+                    var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetAllCaseTicketsForAllMembers, sqlParams, CRMConnectionString, _logger);
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
 

@@ -8,8 +8,8 @@
         /// <summary>
         /// Get OBT Benfit details.
         /// </summary>
-        public static string GetMemberCaseTicketsForZenDesk = 
-            "ServiceRequest.GetMemberCaseTicketsForZenDesk";
+        public static string GetAllCaseTicketsForAllMembers = 
+            "[ServiceRequest].[GetAllCaseTicketsForAllMembers]";
 
         /// <summary>
         /// Updates the zendesk reference for member case tickets.

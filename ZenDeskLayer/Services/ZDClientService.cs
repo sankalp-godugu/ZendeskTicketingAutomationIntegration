@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using ZenDeskAutomation.ZenDeskLayer.Interfaces;
 using ZenDeskTicketProcessJob.Models;
+using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
+using ZenDeskTicketProcessJob.Utilities;
 
 namespace ZenDeskAutomation.ZenDeskLayer.Services
 {
@@ -19,6 +21,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         #region Private Fields
         private IHttpClientFactory _httpClientFactory;
         private IConfiguration _configuration;
+        private ISchemaTemplateService _schemaTemplateService;
         #endregion
 
         #region Constructor
@@ -28,10 +31,11 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// </summary>
         /// <param name="httpClientFactory">Http client factory. <see cref="IHttpClientFactory"/></param>
         /// <param name="configuration">Configuration. <see cref="IConfiguration"/></param>
-        public ZDClientService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public ZDClientService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ISchemaTemplateService schemaTemplateService)
         {
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _schemaTemplateService = schemaTemplateService ?? throw new ArgumentNullException(nameof(schemaTemplateService));
         }
         #endregion
 
@@ -154,7 +158,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// <returns>Returns the string content.</returns>
         private StringContent GetRequestBodyForZenDesk(CaseTickets caseTicket)
         {
-            string zenDeskSubject = $"Member ID: {caseTicket.NHMemberID} with name {caseTicket.FirstName} {caseTicket.LastName} for health plan id {caseTicket.InsuranceHealthPlanID}";
+            string zenDeskSubject = $"Member ID: {caseTicket.NHMemberID}";
 
             //Fetches the values from the configuration.
             string brandValue = _configuration["BrandValue"] ?? "";
@@ -175,11 +179,11 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 {
                     assignee_email = _configuration["Email"],
                     brand_id = brandValue,
-                    description = caseTicket.CaseTicketData,
+                    description = GetTicketDescriptionFromCaseTopic(caseTicket),
                     custom_fields = new[]
                     {
                         new { id = nhMemberID, value = caseTicket?.NHMemberID },
-                        new { id = memberName, value = caseTicket?.FirstName + caseTicket?.LastName }
+                        new { id = memberName, value = caseTicket?.MemberName }
                     },
                     email_ccs = new[]
                     {
@@ -201,6 +205,76 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
             return content;
         }
+
+        private string GetTicketDescriptionFromCaseTopic(CaseTickets caseTickets)
+        {
+            switch (caseTickets?.CaseTopic)
+            {
+                case CaseTopicConstants.ItemRelatedIssues:
+                    return "Description for Item related issues";
+
+                case CaseTopicConstants.ShipmentRelatedIssues:
+                    return "Description for Shipment related issues";
+
+                case CaseTopicConstants.HearingAidIssues:
+                    return "Description for Hearing aid issues";
+
+                case CaseTopicConstants.ProviderIssues:
+                    return "Description for Provider issues";
+
+                case CaseTopicConstants.BillingIssues:
+                    return "Description for Billing issues";
+
+                case CaseTopicConstants.UserAgreementsNotReceived:
+                    return "Description for User Agreements (Not received)";
+
+                case CaseTopicConstants.WrongItemReceived:
+                    return "Description for Wrong Item received";
+
+                case CaseTopicConstants.DeviceIssue:
+                    return "Description for Device Issue";
+
+                case CaseTopicConstants.BalanceNotLoaded:
+                    return "Description for Balance not loaded";
+
+                case CaseTopicConstants.WrongWalletCharged:
+                    return "Description for Wrong wallet charged";
+
+                case CaseTopicConstants.TransactionDeclined:
+                    return "Description for Transaction declined";
+
+                case CaseTopicConstants.Others:
+                    return "Description for Others";
+
+                case CaseTopicConstants.Reimbursement:
+                    return _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets);
+
+                case CaseTopicConstants.WalletTransfer:
+                    return _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets);
+
+                case CaseTopicConstants.CardReplacement:
+                    return _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets);
+
+                case CaseTopicConstants.CardholderAddressUpdate:
+                    return _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets);
+
+                case CaseTopicConstants.ChangeCardStatus:
+                    return _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets);
+
+                case CaseTopicConstants.RequestVoucher:
+                    return "Description for Request Voucher";
+
+                case CaseTopicConstants.CardDeclined:
+                    return "Description for Card Declined";
+
+                case CaseTopicConstants.FlexIssue:
+                    return "Description for Flex Issue";
+
+                default:
+                    return "Unknown Case Topic";
+            }
+        }
+
 
 
         #endregion
