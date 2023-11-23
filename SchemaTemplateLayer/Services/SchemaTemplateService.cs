@@ -333,7 +333,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 
             // HA Item Information
             StringBuilder haItemsInformation = new StringBuilder();
-            int totalPriceImpacted = 0;
+            decimal totalPriceImpacted = 0;
             string totalPriceImpactedMessage = string.Empty;
 
             if (root.ItemInfo != null && root.ItemInfo.Count > 0)

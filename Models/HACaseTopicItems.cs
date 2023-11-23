@@ -19,10 +19,10 @@ namespace ZenDeskTicketProcessJob.Models
             public string ItemId { get; set; }
             public object Item { get; set; }
             public int TotalQuantity { get; set; }
-            public int Price { get; set; }
+            public decimal Price { get; set; }
             public List<Issue> Issue { get; set; }
             public int ImpactedQuantity { get; set; }
-            public int ImpactedPrice { get; set; }
+            public decimal ImpactedPrice { get; set; }
             public string ItemData { get; set; }
             public string ItemCode { get; set; }
         }
