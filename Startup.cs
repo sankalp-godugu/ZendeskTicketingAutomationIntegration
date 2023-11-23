@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using ZenDeskAutomation.DataLayer.Interfaces;
 using ZenDeskAutomation.ZenDeskLayer.Interfaces;
 using ZenDeskAutomation.ZenDeskLayer.Services;
+using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
+using ZenDeskTicketProcessJob.SchemaTemplateLayer.Services;
 
 [assembly: FunctionsStartup(typeof(ZenDeskAutomation.Startup))]
 namespace ZenDeskAutomation
@@ -48,7 +50,13 @@ namespace ZenDeskAutomation
             {
                 var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
                 var configuration = s.GetRequiredService<IConfiguration>();
-                return new ZDClientService(httpClientFactory, configuration);
+                var schemaTemplateService = s.GetRequiredService<ISchemaTemplateService>();
+                return new ZDClientService(httpClientFactory, configuration, schemaTemplateService);
+            });
+
+            builder.Services.AddSingleton<ISchemaTemplateService>((s) =>
+            {
+                return new SchemaTemplateService();
             });
 
         }
