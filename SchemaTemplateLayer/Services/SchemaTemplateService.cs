@@ -1,5 +1,10 @@
-﻿using System.Text.Json;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
 using ZenDeskTicketProcessJob.Models;
+using ZenDeskTicketProcessJob.Models.ZenDeskTicketProcessJob.Models;
 using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
 using ZenDeskTicketProcessJob.Utilities;
 
@@ -21,7 +26,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
             string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
 
-            return $"{caseID}\n" +
+            return $"Case ID#:  {caseID}\n" +
                    $"Due Date: {dueDate}\n" +
                    $"Created On: {createdOn}\n" +
                    $"Case Created By: {caseCreatedBy}\n" +
@@ -128,7 +133,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
 
             // Construct the final message
-            return $"{caseID}\n" +
+            return $"Case ID#: {caseID}\n" +
                    $"Due Date: {dueDate}\n" +
                    $"Created On: {createdOn}\n" +
                    $"Case Created By: {caseCreatedBy}\n" +
@@ -191,7 +196,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
 
             // Construct the final formatted string
-            return $"{caseID}\n" +
+            return $"Case ID#:  {caseID}\n" +
                    $"Due Date: {dueDate}\n" +
                    $"Created On: {createdOn}\n" +
                    $"Case Created By: {caseCreatedBy}\n" +
@@ -252,7 +257,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
 
             // Construct the final formatted string
-            return $"{caseID}\n" +
+            return $"Case ID#: {caseID}\n" +
                    $"Due Date: {dueDate}\n" +
                    $"Created On: {createdOn}\n" +
                    $"Case Created By: {caseCreatedBy}\n" +
@@ -267,5 +272,95 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                    $"Resolution Description: {firstContactResolutionDescription}";
         }
 
+        public string GetSchemaDefinitionForHearingAidCaseTopic(CaseTickets caseTickets)
+        {
+            return GetMessageForHAAndOTCCaseTopics(caseTickets);
+        }
+
+        public string GetSchemaDefinitionForOtherCaseTopic(CaseTickets caseTickets)
+        {
+            string memberIssueID = "#" + caseTickets?.CaseNumber;
+            string caseID = $"#{caseTickets?.CaseTopic} - {caseTickets.CaseTicketNumber}";
+            string caseTicketStatus = caseTickets.CaseTicketStatus;
+            string caseIssue = caseTickets?.CaseTopic;
+
+            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
+            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
+            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
+            string isWrittenResolutionRequested = (bool)(caseTickets?.IsWrittenResolutionRequested) ? "Yes" : "No";
+
+            // Construct the final message
+            string finalMessage = $"{memberIssueID}\n" +
+                                  $"{caseID}\n" +
+                                  $"Case Ticket Status: {caseTicketStatus}\n" +
+                                  $"Case Issue: {caseIssue}\n" +
+                                  $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
+                                  $"First Contact Resolution: {firstContactResolution}\n" +
+                                  $"Resolution Description: {firstContactResolutionDescription}\n" +
+                                  $"Is Written Resolution Requested: {isWrittenResolutionRequested}";
+
+            return finalMessage;
+        }
+
+
+        public string GetSchemaDefinitionForOTCCaseTopic(CaseTickets caseTickets)
+        {
+            return GetMessageForHAAndOTCCaseTopics(caseTickets);
+        }
+
+        private static string GetMessageForHAAndOTCCaseTopics(CaseTickets caseTickets)
+        {
+            // Assuming jsonString is your JSON string
+            Root root = JsonConvert.DeserializeObject<Root>(caseTickets?.CaseTicketData);
+
+            string memberIssueID = "#" + caseTickets?.CaseNumber;
+            string caseID = $"#{caseTickets?.CaseTopic} - {caseTickets.CaseTicketNumber}";
+            string caseTicketStatus = caseTickets.CaseTicketStatus;
+            string caseIssue = caseTickets?.CaseTopic;
+
+            // Order Information
+            string orderInformation = $"{root.Order.OrderId} - " +
+                    $"{DateUtils.GetDateString(root.Order.OrderDate)} - " +
+                    $"${root.Order.TotalAmount}";
+
+            // HA Item Information
+            StringBuilder haItemsInformation = new StringBuilder();
+            int totalPriceImpacted = 0;
+
+            foreach (var haItem in root.ItemInfo)
+            {
+                haItemsInformation.AppendLine($"Item ID: {haItem.ItemId}");
+                haItemsInformation.AppendLine($"Total Quantity: {haItem.TotalQuantity}");
+                haItemsInformation.AppendLine($"Price: ${haItem.Price}");
+                haItemsInformation.AppendLine($"Member Issue: {haItem.Issue?.FirstOrDefault()?.IssueName}");
+                haItemsInformation.AppendLine($"Impacted Quantity: {haItem.ImpactedQuantity}");
+                haItemsInformation.AppendLine($"Impacted Price: ${haItem.ImpactedPrice}");
+                haItemsInformation.AppendLine(); // Separate items
+
+                totalPriceImpacted += haItem.ImpactedPrice;
+            }
+
+            string totalPriceImpactedMessage = $"Total Price Impacted: ${totalPriceImpacted}";
+
+            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
+            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
+            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
+            string isWrittenResolutionRequested = (bool)(caseTickets?.IsWrittenResolutionRequested) ? "Yes" : "No";
+
+            // Construct the final message
+            string message = $"{memberIssueID}\n" +
+                                  $"{caseID}\n" +
+                                  $"Case Ticket Status: {caseTicketStatus}\n" +
+                                  $"Case Issue: {caseIssue}\n" +
+                                  $"Order Information: {orderInformation}\n" +
+                                  $"HA Item Information:\n{haItemsInformation}\n" +
+                                  $"{totalPriceImpactedMessage}\n" +
+                                  $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
+                                  $"First Contact Resolution: {firstContactResolution}\n" +
+                                  $"Resolution Description: {firstContactResolutionDescription}\n" +
+                                  $"Is Written Resolution Requested: {isWrittenResolutionRequested}";
+
+            return message;
+        }
     }
 }
