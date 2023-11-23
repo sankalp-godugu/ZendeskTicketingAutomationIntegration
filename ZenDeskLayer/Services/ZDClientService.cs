@@ -158,20 +158,24 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// <returns>Returns the string content.</returns>
         private StringContent GetRequestBodyForZenDesk(CaseTickets caseTicket)
         {
-            string zenDeskSubject = $"Member ID: {caseTicket.NHMemberID}";
+            string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
 
             //Fetches the values from the configuration.
-            string brandValue = _configuration["BrandValue"] ?? "";
-            string ticketFormValue = _configuration["TicketFormValue"] ?? "";
-            string subject = _configuration["Subject"] ?? "";
-            string description = _configuration["Description"] ?? "";
-            string nhMemberID = _configuration["NHMemberID"] ?? "";
-            string memberName = _configuration["MemberName"] ?? "";
+            string brandValue = _configuration["BrandValue"] ?? "16807551788311";
+            string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
+            string nhMemberID = _configuration["NHMemberID"] ?? "17909776781591";
+            string assignee = _configuration["Assignee"] ?? "16807583954071";
+            string memberName = _configuration["MemberName"] ?? "18660702946583";
             string carrierName = _configuration["Carrier"] ?? "";
-            string contactType = _configuration["ContactType"] ?? "";
-            string requestType = _configuration["RequestType"] ?? "";
-            string IssueRelated = _configuration["IssueRelated"] ?? "";
-            
+            string carrierTag = NamesWithTagsConstants.GetTagValueByCarrierName(caseTicket.InsuranceCarrierName);
+            string contactType = _configuration["ContactType"] ?? "18660715022743";
+            string requestType = _configuration["RequestType"] ?? "18660741950743";
+            string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
+            string IssueRelated = _configuration["IssueRelated"] ?? "18673633856151";
+            string IssueTag = NamesWithTagsConstants.GetTagValueByIssueRelated(caseTicket.CaseType);
+            string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
+
+
             // Create the dynamic object
             var dynamicTicket = new
             {
@@ -183,7 +187,12 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     custom_fields = new[]
                     {
                         new { id = nhMemberID, value = caseTicket?.NHMemberID },
-                        new { id = memberName, value = caseTicket?.MemberName }
+                        new { id = memberName, value = caseTicket?.MemberName },
+                        new { id = carrierName, value = carrierTag },
+                        new { id = assignee, value = caseTicket.AssignedTo },
+                        new { id = requestType, value = requestTag  },
+                        //new { id = IssueRelated, value = IssueTag  },
+                        new { id = healthPlan, value = caseTicket?.HealthPlanName  }
                     },
                     email_ccs = new[]
                     {
@@ -211,13 +220,13 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             switch (caseTickets?.CaseTopic)
             {
                 case CaseTopicConstants.ItemRelatedIssues:
-                    return "Description for Item related issues";
+                    return _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets);
 
                 case CaseTopicConstants.ShipmentRelatedIssues:
                     return "Description for Shipment related issues";
 
                 case CaseTopicConstants.HearingAidIssues:
-                    return "Description for Hearing aid issues";
+                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets);
 
                 case CaseTopicConstants.ProviderIssues:
                     return "Description for Provider issues";
@@ -244,7 +253,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     return "Description for Transaction declined";
 
                 case CaseTopicConstants.Others:
-                    return "Description for Others";
+                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets);
 
                 case CaseTopicConstants.Reimbursement:
                     return _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets);

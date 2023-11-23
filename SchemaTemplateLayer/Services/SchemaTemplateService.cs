@@ -18,6 +18,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
             string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
             string caseCreatedBy = caseTickets.CreateUser;
+            string assignedTo = caseTickets?.AssignedTo;
             string caseTicketStatus = caseTickets.CaseTicketStatus;
             string caseIssue = caseTickets?.CaseTopic;
             string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
@@ -44,6 +45,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string caseID = $"{caseTickets.CaseTicketNumber} - {caseTickets?.CaseTopic}";
             string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
             string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
+            string assignedTo = caseTickets?.AssignedTo;
             string caseCreatedBy = caseTickets.CreateUser;
             string caseTicketStatus = caseTickets.CaseTicketStatus;
             string caseIssue = caseTickets?.CaseTopic;
@@ -95,10 +97,11 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         public string GetSchemaDefinitionForWalletTransferCaseTopic(CaseTickets caseTickets)
         {
             string caseID = $"{caseTickets.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
-            string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
-            string caseCreatedBy = caseTickets.CreateUser;
-            string caseTicketStatus = caseTickets.CaseTicketStatus;
+            string dueDate = DateUtils.GetDateString(caseTickets?.DueDate);
+            string createdOn = DateUtils.GetDateString(caseTickets?.CreateDate);
+            string caseCreatedBy = caseTickets?.CreateUser;
+            string assignedTo = caseTickets?.AssignedTo;
+            string caseTicketStatus = caseTickets?.CaseTicketStatus;
             string caseIssue = caseTickets?.CaseTopic;
             string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
             string caseTopic = caseTickets.CaseTopic;
@@ -119,7 +122,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 toWallet = null;
 
             if (jsonDocument.RootElement.TryGetProperty("BalanceAmount", out var balance))
-                balanceAmount = balance.GetString();
+                balanceAmount = balance.GetRawText();
             else
                 balanceAmount = null;
 
@@ -152,11 +155,11 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 
         public string GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(CaseTickets caseTickets)
         {
-            string caseID = $"{caseTickets.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
-            string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
-            string caseCreatedBy = caseTickets.CreateUser;
-            string caseTicketStatus = caseTickets.CaseTicketStatus;
+            string caseID = $"{caseTickets?.CaseTicketNumber} - {caseTickets?.CaseTopic}";
+            string dueDate = DateUtils.GetDateString(caseTickets?.DueDate);
+            string createdOn = DateUtils.GetDateString(caseTickets?.CreateDate);
+            string caseCreatedBy = caseTickets?.CreateUser;
+            string caseTicketStatus = caseTickets?.CaseTicketStatus;
             string caseIssue = caseTickets?.CaseTopic;
             string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
             string caseTopic = caseTickets.CaseTopic;
@@ -213,14 +216,15 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 
         public string GetSchemaDefinitionForCardReplacementCaseTopic(CaseTickets caseTickets)
         {
-            string caseID = $"{caseTickets.CaseTicketNumber} - {caseTickets?.CaseTopic}";
+            string caseID = $"{caseTickets?.CaseTicketNumber} - {caseTickets?.CaseTopic}";
             string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
             string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
-            string caseCreatedBy = caseTickets.CreateUser;
-            string caseTicketStatus = caseTickets.CaseTicketStatus;
+            string caseCreatedBy = caseTickets?.CreateUser;
+            string assignedTo = caseTickets?.AssignedTo;
+            string caseTicketStatus = caseTickets?.CaseTicketStatus;
             string caseIssue = caseTickets?.CaseTopic;
             string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
-            string caseTopic = caseTickets.CaseTopic;
+            string caseTopic = caseTickets?.CaseTopic;
 
             // Parse JSON string to JsonDocument
             JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
@@ -281,7 +285,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         {
             string memberIssueID = "#" + caseTickets?.CaseNumber;
             string caseID = $"#{caseTickets?.CaseTopic} - {caseTickets.CaseTicketNumber}";
-            string caseTicketStatus = caseTickets.CaseTicketStatus;
+            string caseTicketStatus = caseTickets?.CaseTicketStatus;
             string caseIssue = caseTickets?.CaseTopic;
 
             string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
@@ -315,32 +319,39 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 
             string memberIssueID = "#" + caseTickets?.CaseNumber;
             string caseID = $"#{caseTickets?.CaseTopic} - {caseTickets.CaseTicketNumber}";
-            string caseTicketStatus = caseTickets.CaseTicketStatus;
+            string caseTicketStatus = caseTickets?.CaseTicketStatus;
             string caseIssue = caseTickets?.CaseTopic;
+            string orderInformation = string.Empty;
 
-            // Order Information
-            string orderInformation = $"{root.Order.OrderId} - " +
-                    $"{DateUtils.GetDateString(root.Order.OrderDate)} - " +
-                    $"${root.Order.TotalAmount}";
+            if (root.Order != null)
+            {
+                // Order Information
+                orderInformation = $"{root?.Order?.OrderId} - " +
+                        $"{DateUtils.GetDateString(root?.Order?.OrderDate)} - " +
+                        $"${root?.Order?.TotalAmount}";
+            }
 
             // HA Item Information
             StringBuilder haItemsInformation = new StringBuilder();
             int totalPriceImpacted = 0;
+            string totalPriceImpactedMessage = string.Empty;
 
-            foreach (var haItem in root.ItemInfo)
+            if (root.ItemInfo != null && root.ItemInfo.Count > 0)
             {
-                haItemsInformation.AppendLine($"Item ID: {haItem.ItemId}");
-                haItemsInformation.AppendLine($"Total Quantity: {haItem.TotalQuantity}");
-                haItemsInformation.AppendLine($"Price: ${haItem.Price}");
-                haItemsInformation.AppendLine($"Member Issue: {haItem.Issue?.FirstOrDefault()?.IssueName}");
-                haItemsInformation.AppendLine($"Impacted Quantity: {haItem.ImpactedQuantity}");
-                haItemsInformation.AppendLine($"Impacted Price: ${haItem.ImpactedPrice}");
-                haItemsInformation.AppendLine(); // Separate items
+                foreach (var haItem in root.ItemInfo)
+                {
+                    haItemsInformation.AppendLine($"Item ID: {haItem?.ItemId}");
+                    haItemsInformation.AppendLine($"Total Quantity: {haItem?.TotalQuantity}");
+                    haItemsInformation.AppendLine($"Price: ${haItem?.Price}");
+                    haItemsInformation.AppendLine($"Member Issue: {haItem.Issue?.FirstOrDefault()?.IssueName}");
+                    haItemsInformation.AppendLine($"Impacted Quantity: {haItem?.ImpactedQuantity}");
+                    haItemsInformation.AppendLine($"Impacted Price: ${haItem?.ImpactedPrice}");
+                    haItemsInformation.AppendLine();
 
-                totalPriceImpacted += haItem.ImpactedPrice;
+                    totalPriceImpacted += haItem.ImpactedPrice;
+                }
+                totalPriceImpactedMessage = $"Total Price Impacted: ${totalPriceImpacted}";
             }
-
-            string totalPriceImpactedMessage = $"Total Price Impacted: ${totalPriceImpacted}";
 
             string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
             string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
