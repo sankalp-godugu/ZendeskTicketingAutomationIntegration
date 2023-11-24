@@ -175,7 +175,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             string nhMemberID = _configuration["NHMemberID"] ?? "17909776781591";
             string assignee = _configuration["Assignee"] ?? "16807583954071";
             string memberName = _configuration["MemberName"] ?? "18660702946583";
-            string carrierName = _configuration["Carrier"] ?? "18613496572055";
+            string carrierName = _configuration["Carrier"] ?? "19297442677783";
             string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
             string requestType = _configuration["RequestType"] ?? "18660741950743";
             string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
