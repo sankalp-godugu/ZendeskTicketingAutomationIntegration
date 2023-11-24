@@ -73,7 +73,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             else
             {
                 // Handle the error (e.g., log or throw an exception)
-                throw new Exception($"Failed to call the API. Status code: {response.StatusCode}");
+                //throw new Exception($"Failed to call the API. Status code: {response.StatusCode}");
+                return 0;
             }
         }
     
@@ -118,8 +119,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             }
             else
             {
-                // Handle the error (e.g., log or throw an exception)
-                throw new Exception($"Failed to call the API. Status code: {response.StatusCode}");
+                //Handle the error (e.g., log or throw an exception)
+                //throw new Exception($"Failed to call the API. Status code: {response.StatusCode}");
+                return 0;
             }
         }
 
@@ -207,7 +209,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     subject = zenDeskSubject,
                     ticket_form_id = ticketFormValue,
                     tags = new List<string>(),
-                    comment = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? GetTicketDescriptionFromCaseTopic(caseTicket) : null
+                    comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? GetTicketDescriptionFromCaseTopic(caseTicket) : null }
                 }
             };
 
