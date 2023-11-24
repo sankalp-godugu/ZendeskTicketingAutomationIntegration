@@ -155,6 +155,7 @@ namespace ZenDeskTicketProcessJob.Models
         /// FlexCaseTicketId
         /// </summary>
         public long? FlexCaseTicketId { get; set; }
+
         /// <summary>
         /// StatusReason
         /// </summary>
@@ -171,6 +172,10 @@ namespace ZenDeskTicketProcessJob.Models
         /// InsuranceCarrierName
         /// </summary>
         public string? InsuranceCarrierName { get; set; }
+
+         public long InsuranceCarrierID { get; set; }
+
+
         /// <summary>
         /// InsuranceNumber
         /// </summary>

@@ -151,10 +151,10 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             return httpClient;
         }
 
-        private string GetTagValueFromCarrierName(string insuranceCarrierName)
+        private string GetTagValueFromCarrierName(string insuranceCarrierName, long insuranceCarrierID)
         {
             string carrierName = (insuranceCarrierName ?? string.Empty).ToString()?.Replace(" ", "").Trim().ToLower();
-            return $"carrier_{carrierName}";
+            return $"carrier_{carrierName}_{insuranceCarrierID}";
         }
 
 
@@ -173,8 +173,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             string nhMemberID = _configuration["NHMemberID"] ?? "17909776781591";
             string assignee = _configuration["Assignee"] ?? "16807583954071";
             string memberName = _configuration["MemberName"] ?? "18660702946583";
-            string carrierName = _configuration["Carrier"] ?? "";
-            string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName);
+            string carrierName = _configuration["Carrier"] ?? "18613496572055";
+            string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
             string requestType = _configuration["RequestType"] ?? "18660741950743";
             string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
             string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
@@ -201,9 +201,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     {
                         new { user_email = _configuration["Email"], action = "put" }
                     },
-                    priority = "low",
+                    priority = "high",
                     requester = new { email = _configuration["Email"] },
-                    status = caseTicket.CaseTicketStatus,
+                    custom_status_id = NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket.CaseTicketStatus),
                     subject = zenDeskSubject,
                     ticket_form_id = ticketFormValue,
                     tags = new List<string>()

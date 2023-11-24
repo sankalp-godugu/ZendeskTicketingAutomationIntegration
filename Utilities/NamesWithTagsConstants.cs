@@ -132,6 +132,17 @@ namespace ZenDeskTicketProcessJob.Utilities
             {3, "who_is_contacting_health_plan"},
         };
 
+        private static readonly Dictionary<string, long> ticketStatusIds = new Dictionary<string, long>
+        {
+            { "New", 16807567164695 },
+            { "Reviewed", 19295269450263 },
+            { "Closed Partially", 19294912565143 },
+            { "In Review", 19294761414807 },
+            { "Pending Processing", 19294744142359 },
+            { "Closed",19294781411735  },
+            { "Failed",19294928631191  }
+        };
+
 
         private static readonly Dictionary<string, string> issueRelatedTypes = new Dictionary<string, string>
         {
@@ -144,6 +155,18 @@ namespace ZenDeskTicketProcessJob.Utilities
             {"General inquiry", "csm-team_general_inquiry"},
             {"Member Related issues", "csm-team_member_related_issues"}
         };
+
+        public static long GetTagValueByTicketStatus(string ticketStatus)
+        {
+            if (ticketStatusIds.TryGetValue(ticketStatus, out long tagValue))
+            {
+                return tagValue;
+            }
+            else
+            {
+                return 0;
+            }
+        }
 
 
         public static string GetTagValueByCarrierName(string carrierName)
