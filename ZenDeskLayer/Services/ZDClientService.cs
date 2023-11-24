@@ -151,6 +151,13 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             return httpClient;
         }
 
+        private string GetTagValueFromCarrierName(string insuranceCarrierName)
+        {
+            string carrierName = (insuranceCarrierName ?? string.Empty).ToString()?.Replace(" ", "").Trim().ToLower();
+            return $"carrier_{carrierName}";
+        }
+
+
         /// <summary>
         /// Gets the request body for zendesk.
         /// </summary>
@@ -167,12 +174,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             string assignee = _configuration["Assignee"] ?? "16807583954071";
             string memberName = _configuration["MemberName"] ?? "18660702946583";
             string carrierName = _configuration["Carrier"] ?? "";
-            string carrierTag = NamesWithTagsConstants.GetTagValueByCarrierName(caseTicket.InsuranceCarrierName);
-            string contactType = _configuration["ContactType"] ?? "18660715022743";
+            string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName);
             string requestType = _configuration["RequestType"] ?? "18660741950743";
             string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
-            string IssueRelated = _configuration["IssueRelated"] ?? "18673633856151";
-            string IssueTag = NamesWithTagsConstants.GetTagValueByIssueRelated(caseTicket.CaseType);
             string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
 
 
@@ -191,7 +195,6 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         new { id = carrierName, value = carrierTag },
                         new { id = assignee, value = caseTicket.AssignedTo },
                         new { id = requestType, value = requestTag  },
-                        //new { id = IssueRelated, value = IssueTag  },
                         new { id = healthPlan, value = caseTicket?.HealthPlanName  }
                     },
                     email_ccs = new[]
