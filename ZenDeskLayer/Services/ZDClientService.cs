@@ -203,7 +203,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     },
                     priority = "low",
                     requester = new { email = _configuration["Email"] },
-                    status = "new",
+                    status = caseTicket.CaseTicketStatus,
                     subject = zenDeskSubject,
                     ticket_form_id = ticketFormValue,
                     tags = new List<string>()
