@@ -194,8 +194,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         new { id = memberName, value = caseTicket?.MemberName },
                         new { id = carrierName, value = carrierTag },
                         new { id = assignee, value = caseTicket.AssignedTo },
-                        new { id = requestType, value = requestTag  },
-                        new { id = healthPlan, value = caseTicket?.HealthPlanName  }
+                        new { id = requestType, value = requestTag },
+                        new { id = healthPlan, value = caseTicket?.HealthPlanName }
                     },
                     email_ccs = new[]
                     {
@@ -206,7 +206,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     custom_status_id = NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket.CaseTicketStatus),
                     subject = zenDeskSubject,
                     ticket_form_id = ticketFormValue,
-                    tags = new List<string>()
+                    tags = new List<string>(),
+                    comment = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? GetTicketDescriptionFromCaseTopic(caseTicket) : null
                 }
             };
 
