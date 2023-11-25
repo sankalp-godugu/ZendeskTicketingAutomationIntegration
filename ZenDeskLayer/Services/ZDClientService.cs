@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -44,12 +45,15 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// <summary>
         /// Creates the ticket in zendesk asychronously.
         /// </summary>
-        /// <returns>Returns the response model on success; exception on failure.</returns>
-        public async Task<long> CreateTicketInZenDeskAsync(CaseTickets caseTicket)
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the ticket id of the created zendesk.</returns>
+        public async Task<long> CreateTicketInZenDeskAsync(CaseTickets caseTicket, ILogger logger)
         {
-            StringContent content = GetRequestBodyForZenDesk(caseTicket);
+            // Gets the request body for the zendesk client.
+            StringContent content = GetRequestBodyForZenDesk(caseTicket, logger);
 
-            // HttpClient
+            // Gets the zendesk http client.
             HttpClient httpClient = GetZenDeskHttpClient();
 
             // Make the API request
@@ -77,52 +81,49 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 return 0;
             }
         }
-    
 
-        /// <summary>
-        /// Gets the list of tickets.
-        /// </summary>
-        /// <returns></returns>
-        public List<string> GetListOfTickets()
-        {
-            throw new System.NotImplementedException();
-        }
 
         /// <summary>
         /// Update the ticket in zendesk.
         /// </summary>
-        /// <param name="caseTicket">Case ticket.</param>
-        public async Task<long> UpdateTicketInZenDeskAsync(CaseTickets caseTicket)
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the ticket id from the zendesk.</returns>
+        public async Task<long> UpdateTicketInZenDeskAsync(CaseTickets caseTicket, ILogger logger)
         {
-            StringContent content = GetRequestBodyForZenDesk(caseTicket);
+            // Gets the request body for the zendesk API request.
+            StringContent content = GetRequestBodyForZenDesk(caseTicket, logger);
 
-            // HttpClient
-            HttpClient httpClient = GetZenDeskHttpClient();
-
-            // Make the API request
-            HttpResponseMessage response = await httpClient.PutAsync(_configuration["ZenDesk:ApiEndPoints:UpdateTicket"] + caseTicket.ZendeskTicket, content);
-
-            // Check if the request was successful
-            if (response.IsSuccessStatusCode)
+            if (content != null)
             {
-                // Read and deserialize the response content
-                string responseContent = await response.Content.ReadAsStringAsync();
+                // HttpClient
+                HttpClient httpClient = GetZenDeskHttpClient();
 
-                // Deserialize the JSON string
-                JObject jsonResponse = JObject.Parse(responseContent);
+                // Make the API request
+                HttpResponseMessage response = await httpClient.PutAsync(_configuration["ZenDesk:ApiEndPoints:UpdateTicket"] + caseTicket?.ZendeskTicket, content);
 
-                // Get the value of a specific property
-                long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
+                // Check if the request was successful
+                if (response.IsSuccessStatusCode)
+                {
+                    // Read and deserialize the response content
+                    string responseContent = await response?.Content?.ReadAsStringAsync();
 
-                // Return the deserialized response
-                return ticketIdentifier;
+                    // Deserialize the JSON string
+                    JObject jsonResponse = JObject.Parse(responseContent);
+
+                    // Get the value of a specific property
+                    long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
+
+                    // Return the ticket identifier.
+                    return ticketIdentifier;
+                }
+                else
+                {
+                    logger.LogError($"Failed to call the API. Status code: {response.StatusCode}");
+                    return 0;
+                }
             }
-            else
-            {
-                //Handle the error (e.g., log or throw an exception)
-                //throw new Exception($"Failed to call the API. Status code: {response.StatusCode}");
-                return 0;
-            }
+            else { return 0; }
         }
 
         #endregion
@@ -153,6 +154,12 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             return httpClient;
         }
 
+        /// <summary>
+        /// Gets the tag value from the carrier name and carrier id.
+        /// </summary>
+        /// <param name="insuranceCarrierName">Insurance carrier name.</param>
+        /// <param name="insuranceCarrierID">Insurance carrier id.</param>
+        /// <returns>Returns the tag value from carrier name.</returns>
         private string GetTagValueFromCarrierName(string insuranceCarrierName, long insuranceCarrierID)
         {
             string carrierName = (insuranceCarrierName ?? string.Empty).ToString()?.Replace(" ", "").Trim().ToLower();
@@ -163,35 +170,36 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// <summary>
         /// Gets the request body for zendesk.
         /// </summary>
-        /// <param name="caseTicket">Case ticket.</param>
+        /// <param name="caseTicket">Case ticket.<see cref="CaseTickets"/></param>
         /// <returns>Returns the string content.</returns>
-        private StringContent GetRequestBodyForZenDesk(CaseTickets caseTicket)
+        private StringContent GetRequestBodyForZenDesk(CaseTickets caseTicket, ILogger logger)
         {
-            string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
-
-            //Fetches the values from the configuration.
-            string brandValue = _configuration["BrandValue"] ?? "16807551788311";
-            string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
-            string nhMemberID = _configuration["NHMemberID"] ?? "17909776781591";
-            string assignee = _configuration["Assignee"] ?? "16807583954071";
-            string memberName = _configuration["MemberName"] ?? "18660702946583";
-            string carrierName = _configuration["Carrier"] ?? "19297442677783";
-            string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
-            string requestType = _configuration["RequestType"] ?? "18660741950743";
-            string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
-            string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
-
-
-            // Create the dynamic object
-            var dynamicTicket = new
+            try
             {
-                ticket = new
+                // Constructs the zendesk fields.
+                string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
+                string brandValue = _configuration["BrandValue"] ?? "16807551788311";
+                string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
+                string nhMemberID = _configuration["NHMemberID"] ?? "17909776781591";
+                string assignee = _configuration["Assignee"] ?? "16807583954071";
+                string memberName = _configuration["MemberName"] ?? "18660702946583";
+                string carrierName = _configuration["Carrier"] ?? "19297442677783";
+                string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
+                string requestType = _configuration["RequestType"] ?? "18660741950743";
+                string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
+                string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
+
+
+                // Create the dynamic object
+                var dynamicTicket = new
                 {
-                    assignee_email = _configuration["Email"],
-                    brand_id = brandValue,
-                    description = GetTicketDescriptionFromCaseTopic(caseTicket),
-                    custom_fields = new[]
+                    ticket = new
                     {
+                        assignee_email = _configuration["Email"],
+                        brand_id = brandValue,
+                        description = GetTicketDescriptionFromCaseTopic(caseTicket),
+                        custom_fields = new[]
+                        {
                         new { id = nhMemberID, value = caseTicket?.NHMemberID },
                         new { id = memberName, value = caseTicket?.MemberName },
                         new { id = carrierName, value = carrierTag },
@@ -199,26 +207,32 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         new { id = requestType, value = requestTag },
                         new { id = healthPlan, value = caseTicket?.HealthPlanName }
                     },
-                    email_ccs = new[]
-                    {
+                        email_ccs = new[]
+                        {
                         new { user_email = _configuration["Email"], action = "put" }
                     },
-                    priority = "high",
-                    requester = new { email = _configuration["Email"] },
-                    custom_status_id = NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket.CaseTicketStatus),
-                    subject = zenDeskSubject,
-                    ticket_form_id = ticketFormValue,
-                    tags = new List<string>(),
-                    comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? GetTicketDescriptionFromCaseTopic(caseTicket) : null }
-                }
-            };
+                        priority = "high",
+                        requester = new { email = _configuration["Email"] },
+                        custom_status_id = NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket.CaseTicketStatus),
+                        subject = zenDeskSubject,
+                        ticket_form_id = ticketFormValue,
+                        tags = new List<string>(),
+                        comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? GetTicketDescriptionFromCaseTopic(caseTicket) : null }
+                    }
+                };
 
-            // Serialize the dynamic object to JSON
-            string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
+                // Serialize the dynamic object to JSON
+                string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
 
-            // Create StringContent from JSON payload
-            StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-            return content;
+                // Create StringContent from JSON payload
+                StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                return content;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Failed in processing the request body for zendesk with exception message: {ex.Message}");
+                return null;
+            }
         }
 
         private string GetTicketDescriptionFromCaseTopic(CaseTickets caseTickets)

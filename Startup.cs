@@ -41,6 +41,8 @@ namespace ZenDeskAutomation
 
             builder.Services.AddHttpClient();
 
+            builder.Services.AddApplicationInsightsTelemetry();
+
             builder.Services.AddSingleton<IDataLayer>((s) =>
             {
                 return new DataLayer.Services.DataLayer();
