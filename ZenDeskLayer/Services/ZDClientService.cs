@@ -213,11 +213,11 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     },
                         priority = "high",
                         requester = new { email = _configuration["Email"] },
-                        custom_status_id = NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
+                        custom_status_id = (CaseTopicConstants.Reimbursement == caseTicket.CaseTopic || CaseTopicConstants.WalletTransfer == caseTicket.CaseTopic) ? NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket.CaseTicketStatus)  : NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
                         subject = zenDeskSubject,
                         ticket_form_id = ticketFormValue,
                         tags = new List<string>(),
-                        comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ?GetTicketDescriptionFromCaseTopic(caseTicket) : null }
+                        comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? GetTicketDescriptionFromCaseTopic(caseTicket) : null }
                     }
                 };
 
