@@ -160,7 +160,7 @@ namespace ZenDeskTicketProcessJob.Utilities
 
         public static long GetTagValueByTicketStatus(string ticketStatus)
         {
-            if (ticketStatusIds.TryGetValue(ticketStatus, out long tagValue))
+            if (ticketStatusIds.TryGetValue(ticketStatus?.ToString()?.TrimEnd(), out long tagValue))
             {
                 return tagValue;
             }
