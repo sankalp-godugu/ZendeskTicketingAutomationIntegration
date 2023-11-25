@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ZenDeskTicketProcessJob.Models;
 
@@ -12,19 +13,17 @@ namespace ZenDeskAutomation.ZenDeskLayer.Interfaces
         /// <summary>
         /// Creates the ticket in zendesk asychronously.
         /// </summary>
-        /// <returns>Returns the response model on success; exception on failure.</returns>
-        public Task<long> CreateTicketInZenDeskAsync(CaseTickets caseTickets);
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the ticket id of the created zendesk.</returns>
+        public Task<long> CreateTicketInZenDeskAsync(CaseTickets caseTickets, ILogger logger);
 
         /// <summary>
         /// Update the ticket in zendesk.
         /// </summary>
-        /// <param name="caseTicket">Case ticket.</param>
-        public Task<long> UpdateTicketInZenDeskAsync(CaseTickets caseTicket);
-
-
-        /// <summary>
-        /// Gets the list of tickets from zendesk.
-        /// </summary>
-        public List<string> GetListOfTickets();
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the ticket id from the zendesk.</returns>
+        public Task<long> UpdateTicketInZenDeskAsync(CaseTickets caseTicket, ILogger logger);
     }
 }

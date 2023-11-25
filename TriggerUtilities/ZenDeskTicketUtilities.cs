@@ -11,8 +11,22 @@ using ZenDeskTicketProcessJob.Models;
 
 namespace ZenDeskTicketProcessJob.TriggerUtilities
 {
+
+    /// <summary>
+    /// Zendesk utilities.
+    /// </summary>
     public static class ZenDeskTicketUtilities
     {
+
+        /// <summary>
+        /// Processes Zendesk tickets, performing operations such as logging, configuration retrieval,
+        /// data layer interaction, and Zendesk API service calls.
+        /// </summary>
+        /// <param name="_logger">An instance of the <see cref="ILogger"/> interface for logging.</param>
+        /// <param name="_configuration">An instance of the <see cref="IConfiguration"/> interface for accessing configuration settings.</param>
+        /// <param name="_dataLayer">An instance of the <see cref="IDataLayer"/> interface or class for interacting with the data layer.</param>
+        /// <param name="_zdClientService">An instance of the <see cref="IZDClientService"/> interface or class for Zendesk API service calls.</param>
+        /// <returns>An <see cref="IActionResult"/> representing the result of the Zendesk ticket processing.</returns>
         public static IActionResult ProcessZenDeskTickets(ILogger _logger, IConfiguration _configuration, IDataLayer _dataLayer, IZDClientService _zdClientService)
         {
             try
@@ -23,27 +37,31 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                 {
                     _logger.LogInformation("Task started");
 
+                    // CRM connection string.
                     string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
 
+                    // SQL parameters.
                     var sqlParams = new Dictionary<string, object>
                     {
                         {"@date", _configuration["CurrentDate"]},
-                    {"@count", _configuration["Count"] }
-                };
+                        {"@count", _configuration["Count"] }
+                    };
+
+                    _logger.LogInformation("Started fetching the case tickets for all members");
 
                     var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetAllCaseTicketsForAllMembers, sqlParams, CRMConnectionString, _logger);
 
-                    string brConnectionString = _configuration["DataBase:BRConnectionString"];
+                    _logger.LogInformation($"Ended fetching the case tickets with count: {caseManagementTickets?.Count}");
 
-                    _logger.LogInformation($"Received case management tickets with count: {caseManagementTickets?.Count}");
+                    string brConnectionString = _configuration["DataBase:BRConnectionString"];
 
                     foreach (var caseManagementTicket in caseManagementTickets)
                     {
-                        if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && caseManagementTicket?.ZendeskTicket?.Length > 0)
+                        if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && Convert.ToInt64(caseManagementTicket?.ZendeskTicket) > 0)
                         {
-                            _logger.LogInformation($"Started updating ticket via = zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+                            _logger.LogInformation($"Started updating ticket via zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
-                            var ticketNumberReference = await _zdClientService.UpdateTicketInZenDeskAsync(caseManagementTicket);
+                            var ticketNumberReference = await _zdClientService?.UpdateTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger.LogInformation($"Successfully updated zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
@@ -54,7 +72,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                         {
                             _logger.LogInformation($"Started creating ticket via = zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
-                            var ticketNumberReference = await _zdClientService.CreateTicketInZenDeskAsync(caseManagementTicket);
+                            var ticketNumberReference = await _zdClientService.CreateTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger.LogInformation($"Successfully created zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
@@ -87,15 +105,17 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         /// <param name="ticketNumberReference">Ticket number reference.</param>
         private static async Task UpdatesZendeskTicketReferenceAndIsProcessedStatus(ILogger _logger, string brConnectionString, CaseTickets caseManagementTicket, long ticketNumberReference, IDataLayer _dataLayer)
         {
+            _logger.LogInformation($"Updating zendesk ticket details with caseticket id :{caseManagementTicket?.ZendeskTicket}");
+
             var result = await _dataLayer.ExecuteNonQuery(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
 
             if (result == 1)
             {
-                _logger.LogInformation($"Updated the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}.");
+                _logger?.LogInformation($"Updated the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}.");
             }
             else
             {
-                _logger.LogError($"Failed to update the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}.");
+                _logger?.LogInformation($"Failed to update the zendesk ticker number reference id: {ticketNumberReference} for case ticket id: {caseManagementTicket?.CaseTicketID}.");
             }
         }
     }
