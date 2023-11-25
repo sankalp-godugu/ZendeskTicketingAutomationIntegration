@@ -39,7 +39,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                     foreach (var caseManagementTicket in caseManagementTickets)
                     {
-                        if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && caseManagementTicket?.ZendeskTicket?.Length > 0)
+                        if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && Convert.ToInt64(caseManagementTicket?.ZendeskTicket) > 0)
                         {
                             _logger.LogInformation($"Started updating ticket via = zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
