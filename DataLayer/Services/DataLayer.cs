@@ -48,10 +48,12 @@ namespace ZenDeskAutomation.DataLayer.Services
 
                         list = DataReaderMapToList<T>(dataReader, logger);
                     }
+
                 }
                 catch (Exception ex)
                 {
                     logger.LogError($"{procedureName} failed with exception: {ex.Message} for carrierId - {parameters["InsuranceCarrierId"]}");
+                    throw;
                 }
                 finally
                 {
@@ -108,10 +110,11 @@ namespace ZenDeskAutomation.DataLayer.Services
                     catch (Exception ex)
                     {
                         logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
-                        return -1;
+                        throw;
                     }
                     finally
                     {
+                        // Close the connection in the finally block to ensure it is closed even in case of an exception
                         connection.Close();
                     }
                 }
@@ -141,7 +144,7 @@ namespace ZenDeskAutomation.DataLayer.Services
             catch (Exception ex)
             {
                 logger.LogError($"TimeOut with Exception: {ex.Message}");
-                return -1;
+                throw;
             }
         }
 
@@ -176,8 +179,8 @@ namespace ZenDeskAutomation.DataLayer.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error occured while parsing the List to table with Exception: {ex.Message}");
-                return list;
+                logger.LogError($"While Parsing from List to Table with Exception: {ex.Message}");
+                throw;
             }
         }
 

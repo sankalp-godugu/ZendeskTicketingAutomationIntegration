@@ -4,8 +4,6 @@ using Azure.Identity;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using ZenDeskAutomation.DataLayer.Interfaces;
 using ZenDeskAutomation.ZenDeskLayer.Interfaces;
 using ZenDeskAutomation.ZenDeskLayer.Services;
@@ -42,20 +40,6 @@ namespace ZenDeskAutomation
         {
 
             builder.Services.AddHttpClient();
-
-            builder.Services.AddApplicationInsightsTelemetry();
-
-            using var loggerFactory = LoggerFactory.Create(builder =>
-            {
-                builder.AddSimpleConsole(i => {
-                    i.ColorBehavior = LoggerColorBehavior.Disabled;
-                    i.IncludeScopes = true;
-                    i.UseUtcTimestamp = true;
-                });
-                builder.AddApplicationInsights(options => {
-                    options.IncludeScopes = true;
-                });
-            });
 
             builder.Services.AddSingleton<IDataLayer>((s) =>
             {
