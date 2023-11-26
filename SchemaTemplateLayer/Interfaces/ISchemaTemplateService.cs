@@ -15,12 +15,18 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces
 
         public string GetSchemaDefinitionForWalletTransferCaseTopic(CaseTickets caseTickets);
 
+        public string GetSchemaDefinitionForProviderIssuesCaseTopic(CaseTickets caseTickets);
+
+        public string GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(CaseTickets caseTickets);
+
+        public string GetSchemaDefinitionForBillingIssuesCaseTopic(CaseTickets caseTickets);
+
         public string GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(CaseTickets caseTickets);
 
         public string GetSchemaDefinitionForCardReplacementCaseTopic(CaseTickets caseTickets);
 
         public string GetSchemaDefinitionForHearingAidCaseTopic(CaseTickets caseTickets);
-        public string GetSchemaDefinitionForOtherCaseTopic(CaseTickets caseTickets);
+        public string GetSchemaDefinitionForOthersCaseTopic(CaseTickets caseTickets);
 
         public string GetSchemaDefinitionForOTCCaseTopic(CaseTickets caseTickets);
     }

@@ -243,16 +243,16 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     return _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets);
 
                 case CaseTopicConstants.ShipmentRelatedIssues:
-                    return "Description for Shipment related issues";
+                    return _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets);
 
                 case CaseTopicConstants.HearingAidIssues:
                     return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets);
 
                 case CaseTopicConstants.ProviderIssues:
-                    return "Description for Provider issues";
+                    return _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets);
 
                 case CaseTopicConstants.BillingIssues:
-                    return "Description for Billing issues";
+                    return _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets);
 
                 case CaseTopicConstants.UserAgreementsNotReceived:
                     return "Description for User Agreements (Not received)";
