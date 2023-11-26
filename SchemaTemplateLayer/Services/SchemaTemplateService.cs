@@ -363,12 +363,13 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 
             // Construct the final message
             string message = commonMessage +
-                                  $"Order Information: {orderInformation}\n" +
-                                  caseTickets.CaseType != CaseTypeConstants.OTCHealthyFoods ?  $"HA Item Information:\n{haItemsInformation}\n" : string.Empty +
-                                  $"{totalPriceImpactedMessage}\n" +
-                                  resolutionMessage;
+                $"Order Information: {orderInformation}\n" +
+                (root.ItemInfo.Count > 0 ? $"Item Information:\n{haItemsInformation}\n" : string.Empty) +
+                $"{totalPriceImpactedMessage}\n" +
+                resolutionMessage;
 
             return message;
+
         }
 
         /// <summary>
