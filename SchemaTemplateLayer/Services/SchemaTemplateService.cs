@@ -364,7 +364,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             // Construct the final message
             string message = commonMessage +
                                   $"Order Information: {orderInformation}\n" +
-                                  $"HA Item Information:\n{haItemsInformation}\n" +
+                                  caseTickets.CaseType != CaseTypeConstants.OTCHealthyFoods ?  $"HA Item Information:\n{haItemsInformation}\n" : string.Empty +
                                   $"{totalPriceImpactedMessage}\n" +
                                   resolutionMessage;
 
@@ -394,7 +394,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                    $"Created On: {createdOn}\n" +
                    $"Issue Genre: {issueGenre}\n" +
                    $"Issue Type: {issueType}\n" +
-                   $"Due Date: {issueTopic}\n" +
+                   $"Issue Topic: {issueTopic}\n" +
                    $"Assigned To: {assignedTo}\n" +
                    $"Case Ticket Status: {caseTicketStatus}\n" +
                    $"Card Information: {cardInformation}\n";
