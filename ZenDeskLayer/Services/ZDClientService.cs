@@ -185,8 +185,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string memberName = _configuration["MemberName"] ?? "18660702946583";
                 string carrierName = _configuration["Carrier"] ?? "19297442677783";
                 string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
-                string requestType = _configuration["RequestType"] ?? "18660741950743";
-                string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
+                //string requestType = _configuration["RequestType"] ?? "18660741950743";
+                //string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
                 string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
                 string contactType = _configuration["ContactType"] ?? "18660715022743";
 
@@ -205,10 +205,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         new { id = memberName, value = caseTicket?.MemberName },
                         new { id = carrierName, value = carrierTag },
                         new { id = assignee, value = caseTicket.AssignedTo },
-                        new { id = requestType, value = requestTag },
+                        //new { id = requestType, value = requestTag },
                         new { id = healthPlan, value = caseTicket?.HealthPlanName },
-                        new { id = contactType, value = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID)},
-                        new { id = requestType, value = "request_type_member_issue"}
+                       // new { id = contactType, value = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID)},
                     },
                         email_ccs = new[]
                         {
