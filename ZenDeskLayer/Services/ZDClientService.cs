@@ -188,6 +188,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string requestType = _configuration["RequestType"] ?? "18660741950743";
                 string requestTag = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID);
                 string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
+                string contactType = _configuration["ContactType"] ?? "18660715022743";
 
 
                 // Create the dynamic object
@@ -205,7 +206,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         new { id = carrierName, value = carrierTag },
                         new { id = assignee, value = caseTicket.AssignedTo },
                         new { id = requestType, value = requestTag },
-                        new { id = healthPlan, value = caseTicket?.HealthPlanName }
+                        new { id = healthPlan, value = caseTicket?.HealthPlanName },
+                        new { id = contactType, value = NamesWithTagsConstants.GetTagValueByRequestorType(caseTicket.RequestorTypeID)},
+                        new { id = requestType, value = "request_type_member_issue"}
                     },
                         email_ccs = new[]
                         {
