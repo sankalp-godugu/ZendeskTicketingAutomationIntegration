@@ -88,7 +88,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string orderInformation = GetOrderInformation(root);
 
             // Is benefit applied.
-            bool wasBenefitApplied = root.Order.BenefitApplied;
+            string wasBenefitApplied = root.Order != null ? root.Order.BenefitApplied ? "Yes" : "No" : "Not found";
 
             string resolutionMessage = ConstructResolutionMessage(caseTickets);
             return commonMessage +
@@ -364,7 +364,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             // Construct the final message
             string message = commonMessage +
                 $"Order Information: {orderInformation}\n" +
-                (root.ItemInfo.Count > 0 ? $"Item Information:\n{haItemsInformation}\n" : string.Empty) +
+                (root.ItemInfo != null && root.ItemInfo.Count > 0 ? $"Item Information:\n{haItemsInformation}\n" : string.Empty) +
                 $"{totalPriceImpactedMessage}\n" +
                 resolutionMessage;
 
