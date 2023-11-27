@@ -189,6 +189,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
                 string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
 
+                var descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
 
                 // Create the dynamic object
                 var dynamicTicket = new
@@ -197,7 +198,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     {
                         assignee_email = _configuration["Email"],
                         brand_id = brandValue,
-                        description = GetTicketDescriptionFromCaseTopic(caseTicket),
+                        description = descriptionOrComment,
                         custom_fields = new[]
                         {
                             new { id = nhMemberID, value = caseTicket?.NHMemberID },
@@ -216,7 +217,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         subject = zenDeskSubject,
                         ticket_form_id = ticketFormValue,
                         tags = new List<string>(),
-                        comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? GetTicketDescriptionFromCaseTopic(caseTicket) : null }
+                        comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? descriptionOrComment : null }
                     }
                 };
 
@@ -239,24 +240,24 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// </summary>
         /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
         /// <returns>Returns the ticket description from the case topic.</returns>
-        private string GetTicketDescriptionFromCaseTopic(CaseTickets caseTickets)
+        private string GetTicketDescriptionFromCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
             switch (caseTickets?.CaseTopic)
             {
                 case CaseTopicConstants.ItemRelatedIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.ShipmentRelatedIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.HearingAidIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.ProviderIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.BillingIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.UserAgreementsNotReceived:
                     return "Description for User Agreements (Not received)";
@@ -277,31 +278,31 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     return "Description for Transaction declined";
 
                 case CaseTopicConstants.Others:
-                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.Reimbursement:
-                    return _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.WalletTransfer:
-                    return _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.CardReplacement:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.CardholderAddressUpdate:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.ChangeCardStatus:
-                    return _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.RequestVoucher:
                     return "Description for Request Voucher";
 
                 case CaseTopicConstants.CardDeclined:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets, logger);
 
                 case CaseTopicConstants.FlexIssue:
-                    return _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets);
+                    return _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets, logger);
 
                 default:
                     return "Unknown Case Topic";
