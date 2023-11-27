@@ -265,10 +265,10 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
 
                 // Access individual properties using the GetPropertyValue method
-                string fromWallet = GetPropertyValue(jsonDocument, "FromWalletValue");
-                string toWallet = GetPropertyValue(jsonDocument, "ToWalletValue");
-                string balanceAmount = GetPropertyValue(jsonDocument, "BalanceAmount");
-                string reasonForMissingFunds = GetPropertyValue(jsonDocument, "Reason");
+                var fromWallet = GetPropertyValue(jsonDocument, "FromWalletValue");
+                var toWallet = GetPropertyValue(jsonDocument, "ToWalletValue");
+                var balanceAmount = GetPropertyValue(jsonDocument, "BalanceAmount");
+                var reasonForMissingFunds = GetPropertyValue(jsonDocument, "Reason");
 
                 // Resolution message.
                 string resolutionMessage = ConstructResolutionMessage(caseTickets);
@@ -584,22 +584,34 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         }
 
         /// <summary>
-        /// Gets the property value from the json document for the passed property name.
+        /// Gets the property value from the JSON document for the passed property name.
         /// </summary>
-        /// <param name="jsonDocument">Json document.<see cref="JsonDocument"/></param>
+        /// <param name="jsonDocument">JSON document.<see cref="JsonDocument"/></param>
         /// <param name="propertyName">Property name.<see cref="propertyName"/></param>
-        /// <returns>Returns the value of the property.</returns>
+        /// <returns>Returns the value of the property as a string, or null if not found.</returns>
         private string GetPropertyValue(JsonDocument jsonDocument, string propertyName)
         {
             if (jsonDocument.RootElement.TryGetProperty(propertyName, out var propertyElement))
             {
-                return propertyElement.GetString();
+                switch (propertyElement.ValueKind)
+                {
+                    case JsonValueKind.String:
+                        return propertyElement.GetString();
+                    case JsonValueKind.Number:
+                        return propertyElement.ToString();
+                    case JsonValueKind.True:
+                    case JsonValueKind.False:
+                        return propertyElement.GetBoolean().ToString();
+                    default:
+                        return propertyElement.ToString();
+                }
             }
             else
             {
                 return null;
             }
         }
+
 
         #endregion
 
