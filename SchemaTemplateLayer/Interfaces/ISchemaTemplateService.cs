@@ -29,5 +29,9 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces
         public string GetSchemaDefinitionForOthersCaseTopic(CaseTickets caseTickets);
 
         public string GetSchemaDefinitionForOTCCaseTopic(CaseTickets caseTickets);
+
+        public string GetSchemaDefinitionForCardDeclinedCaseTopic(CaseTickets caseTickets);
+
+        public string GetSchemaDefinitionForFlexIssueCaseTopic(CaseTickets caseTickets);
     }
 }

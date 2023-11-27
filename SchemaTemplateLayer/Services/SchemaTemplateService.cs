@@ -129,7 +129,6 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             var appointmentProcessData = JsonConvert.DeserializeObject<JObject>(jsonObject["appointment"]["appointmentProcessData"].ToString());
             string dateOfService = DateUtils.GetDateString(Convert.ToDateTime(appointmentProcessData["DateOfService"]));
 
-
             string resolutionMessage = ConstructResolutionMessage(caseTickets);
             return commonMessage +
                    $"Appointment ID: #{memberAppointmentId}\n" +
@@ -137,6 +136,55 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                    $"Provider Location: {providerLocation}\n" +
                    $"HCP Name: {hcpName}\n" +
                    $"Date of Interaction: {dateOfService}\n" +
+                   resolutionMessage;
+        }
+
+        /// <summary>
+        /// Gets the schema for the card declined case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForCardDeclinedCaseTopic(CaseTickets caseTickets)
+        {
+            string commonMessage = ConstructCommonMessage(caseTickets);
+
+            var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+
+            // Accessing TransactionDate, TransactionDetails, and Reason
+            string transactionDate = jsonObject["TransactionDate"].ToString();
+            string transactionDetails = jsonObject["TransactionDetails"].ToString();
+            string reason = jsonObject["Reason"].ToString();
+
+            string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+            return commonMessage +
+                   $"Transaction Date: {DateUtils.GetDateString(Convert.ToDateTime(transactionDate))}\n" +
+                   $"Transaction Details: {transactionDetails}\n" +
+                   $"Reason for: {reason}\n" +
+                   resolutionMessage;
+        }
+
+        /// <summary>
+        /// Gets the schema for the flex issue case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForFlexIssueCaseTopic(CaseTickets caseTickets)
+        {
+            string commonMessage = ConstructCommonMessage(caseTickets);
+
+            var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+
+            // Accessing TransactionDate, TransactionDetails, and Reason
+            string fromWalletValue = jsonObject["FromWalletValue"].ToString();
+            string toWalletValue = jsonObject["ToWalletValue"].ToString();
+            double balanceAmount = (double)jsonObject["BalanceAmount"]; // Assuming BalanceAmount is a numeric value
+            string reason = jsonObject["Reason"].ToString();
+
+            string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+            return commonMessage +
+                   $"Wallet Transfer Reson: Transaction amount of ${balanceAmount} from {fromWalletValue} to {toWalletValue} wallet with reason {reason}\n" +
                    resolutionMessage;
         }
 
@@ -461,6 +509,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             }
             return orderInformation;
         }
+
 
         #endregion
 

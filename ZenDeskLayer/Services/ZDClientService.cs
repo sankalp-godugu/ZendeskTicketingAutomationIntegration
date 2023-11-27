@@ -296,10 +296,10 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     return "Description for Request Voucher";
 
                 case CaseTopicConstants.CardDeclined:
-                    return "Description for Card Declined";
+                    return _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets);
 
                 case CaseTopicConstants.FlexIssue:
-                    return "Description for Flex Issue";
+                    return _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets);
 
                 default:
                     return "Unknown Case Topic";
