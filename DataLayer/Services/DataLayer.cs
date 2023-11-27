@@ -72,7 +72,7 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <param name="logger">Logger</param>
         /// <param name="connectionString">Connection string.</param>
         /// <returns>Returns the collection of objects.</returns>
-        public async Task<int> ExecuteNonQuery(string procedureName, long caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
+        public async Task<int> ExecuteNonQuery(string procedureName, long? caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {

@@ -4,6 +4,7 @@ using Azure.Identity;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ZenDeskAutomation.DataLayer.Interfaces;
 using ZenDeskAutomation.ZenDeskLayer.Interfaces;
 using ZenDeskAutomation.ZenDeskLayer.Services;
@@ -42,6 +43,13 @@ namespace ZenDeskAutomation
             builder.Services.AddHttpClient();
 
             builder.Services.AddApplicationInsightsTelemetry();
+
+            // Configure logging
+            builder.Services.AddLogging(loggingBuilder =>
+            {
+                // Add Application Insights logging
+                loggingBuilder.AddApplicationInsights();
+            });
 
             builder.Services.AddSingleton<IDataLayer>((s) =>
             {

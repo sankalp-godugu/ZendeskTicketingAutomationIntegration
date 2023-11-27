@@ -31,11 +31,11 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         {
             try
             {
-                _logger.LogInformation("*********Azure function execution started**********");
+                _logger?.LogInformation("*********Azure function execution started**********");
 
                 Task.Run(async () =>
                 {
-                    _logger.LogInformation("Task started");
+                    _logger?.LogInformation("Task started");
 
                     // CRM connection string.
                     string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
@@ -47,11 +47,11 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                         {"@count", _configuration["Count"] }
                     };
 
-                    _logger.LogInformation("Started fetching the case tickets for all members");
+                    _logger?.LogInformation("Started fetching the case tickets for all members");
 
                     var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetAllCaseTicketsForAllMembers, sqlParams, CRMConnectionString, _logger);
 
-                    _logger.LogInformation($"Ended fetching the case tickets with count: {caseManagementTickets?.Count}");
+                    _logger?.LogInformation($"Ended fetching the case tickets with count: {caseManagementTickets?.Count}");
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
 
@@ -59,38 +59,38 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                     {
                         if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && Convert.ToInt64(caseManagementTicket?.ZendeskTicket) > 0)
                         {
-                            _logger.LogInformation($"Started updating ticket via zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+                            _logger?.LogInformation($"Started updating ticket via zendesk API for the case management ticket id: {caseManagementTicket?.CaseTicketID} for NHMemberID {caseManagementTicket?.NHMemberID} with details {caseManagementTicket}");
 
                             var ticketNumberReference = await _zdClientService?.UpdateTicketInZenDeskAsync(caseManagementTicket, _logger);
 
-                            _logger.LogInformation($"Successfully updated zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+                            _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
                             await UpdatesZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference, _dataLayer);
 
                         }
                         else
                         {
-                            _logger.LogInformation($"Started creating ticket via = zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+                            _logger?.LogInformation($"Started creating ticket via zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID}  for NHMemberID {caseManagementTicket?.NHMemberID} with details {caseManagementTicket}");
 
                             var ticketNumberReference = await _zdClientService.CreateTicketInZenDeskAsync(caseManagementTicket, _logger);
 
-                            _logger.LogInformation($"Successfully created zendesk ticket for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
+                            _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
                             await UpdatesZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference, _dataLayer);
                         }
                     }
 
-                    _logger.LogInformation("Task ended");
+                    _logger?.LogInformation("Task ended");
 
                 });
 
-                _logger.LogInformation("*********Azure function execution ended*********");
+                _logger?.LogInformation("*********Azure function execution ended*********");
 
                 return new OkObjectResult("Azure function executed successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed with an exception with message: {ex.Message}");
+                _logger?.LogError($"Failed with an exception with message: {ex.Message}");
                 return new BadRequestObjectResult(ex.Message);
             }
         }
@@ -105,7 +105,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         /// <param name="ticketNumberReference">Ticket number reference.</param>
         private static async Task UpdatesZendeskTicketReferenceAndIsProcessedStatus(ILogger _logger, string brConnectionString, CaseTickets caseManagementTicket, long ticketNumberReference, IDataLayer _dataLayer)
         {
-            _logger.LogInformation($"Updating zendesk ticket details with caseticket id :{caseManagementTicket?.ZendeskTicket}");
+            _logger?.LogInformation($"Updating zendesk ticket details with caseticket id :{caseManagementTicket?.ZendeskTicket}");
 
             var result = await _dataLayer.ExecuteNonQuery(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
 
