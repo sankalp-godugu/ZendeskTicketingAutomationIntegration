@@ -428,7 +428,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         private string ConstructCommonMessage(CaseTickets caseTickets)
         {
             string caseID = $"{caseTickets?.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string createdBy = caseTickets?.CreateUserFullName;
+            string createdBy = caseTickets?.CreateUser;
             string createdOn = DateUtils.GetDateString(caseTickets?.CreateDate);
             string issueGenre = caseTickets?.CaseCategory;
             string issueType = caseTickets?.CaseType;
