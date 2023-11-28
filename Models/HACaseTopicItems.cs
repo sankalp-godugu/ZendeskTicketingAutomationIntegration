@@ -32,6 +32,8 @@ namespace ZenDeskTicketProcessJob.Models
             public long OrderId { get; set; }
             public DateTime OrderDate { get; set; }
             public decimal TotalAmount { get; set; }
+
+            public bool BenefitApplied { get; set; }
         }
 
         public class Root

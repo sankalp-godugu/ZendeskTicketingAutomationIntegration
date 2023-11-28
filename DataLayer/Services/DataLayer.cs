@@ -48,12 +48,10 @@ namespace ZenDeskAutomation.DataLayer.Services
 
                         list = DataReaderMapToList<T>(dataReader, logger);
                     }
-
                 }
                 catch (Exception ex)
                 {
                     logger.LogError($"{procedureName} failed with exception: {ex.Message} for carrierId - {parameters["InsuranceCarrierId"]}");
-                    throw;
                 }
                 finally
                 {
@@ -74,7 +72,7 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <param name="logger">Logger</param>
         /// <param name="connectionString">Connection string.</param>
         /// <returns>Returns the collection of objects.</returns>
-        public async Task<int> ExecuteNonQuery(string procedureName, long caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
+        public async Task<int> ExecuteNonQuery(string procedureName, long? caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
@@ -110,11 +108,10 @@ namespace ZenDeskAutomation.DataLayer.Services
                     catch (Exception ex)
                     {
                         logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
-                        throw;
+                        return -1;
                     }
                     finally
                     {
-                        // Close the connection in the finally block to ensure it is closed even in case of an exception
                         connection.Close();
                     }
                 }
@@ -144,7 +141,7 @@ namespace ZenDeskAutomation.DataLayer.Services
             catch (Exception ex)
             {
                 logger.LogError($"TimeOut with Exception: {ex.Message}");
-                throw;
+                return -1;
             }
         }
 
@@ -179,8 +176,8 @@ namespace ZenDeskAutomation.DataLayer.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"While Parsing from List to Table with Exception: {ex.Message}");
-                throw;
+                logger.LogError($"Error occured while parsing the List to table with Exception: {ex.Message}");
+                return list;
             }
         }
 

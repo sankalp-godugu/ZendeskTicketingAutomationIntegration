@@ -1,5 +1,7 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -10,319 +12,567 @@ using ZenDeskTicketProcessJob.Utilities;
 
 namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 {
+    /// <summary>
+    /// Schema template service.
+    /// </summary>
     public class SchemaTemplateService : ISchemaTemplateService
     {
-        public string GetSchemaDefinitionForReimbursementRequestCaseTopic(CaseTickets caseTickets)
+        /// <summary>
+        /// Gets the schema for the reimbursement request case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param> 
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForReimbursementRequestCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
-            string caseID = $"{caseTickets.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
-            string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
-            string caseCreatedBy = caseTickets.CreateUser;
-            string assignedTo = caseTickets?.AssignedTo;
-            string caseTicketStatus = caseTickets.CaseTicketStatus;
-            string caseIssue = caseTickets?.CaseTopic;
-            string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
-            string caseTopic = caseTickets.CaseTopic;
-            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
-            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
-            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
-
-            return $"Case ID#:  {caseID}\n" +
-                   $"Due Date: {dueDate}\n" +
-                   $"Created On: {createdOn}\n" +
-                   $"Case Created By: {caseCreatedBy}\n" +
-                   $"Case Ticket Status: {caseTicketStatus}\n" +
-                   $"Case Issue: {caseIssue}\n" +
-                   $"Card Information: {cardInformation}\n" +
-                   $"Case Topic: {caseTopic}\n" +
-                   $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
-                   $"First Contact Resolution: {firstContactResolution}\n" +
-                   $"Resolution Description: {firstContactResolutionDescription}";
+            string commonMessage = ConstructCommonMessage(caseTickets);
+            string resolutionMessage = ConstructResolutionMessage(caseTickets);
+            return $"{commonMessage}{resolutionMessage}";
         }
 
-        public string GetSchemaDefinitionForChangeCardStatusCaseTopic(CaseTickets caseTickets)
+        /// <summary>
+        /// Gets the schema for the change card status case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForChangeCardStatusCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
-            string caseID = $"{caseTickets.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
-            string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
-            string assignedTo = caseTickets?.AssignedTo;
-            string caseCreatedBy = caseTickets.CreateUser;
-            string caseTicketStatus = caseTickets.CaseTicketStatus;
-            string caseIssue = caseTickets?.CaseTopic;
-            string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
-            string caseTopic = caseTickets.CaseTopic;
+            try
+            {   
+                // Common message.
+                string commonMessage = ConstructCommonMessage(caseTickets);
 
-            // Parse JSON string to JsonDocument
-            JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
+                // Parse JSON string to JsonDocument
+                JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
 
-            // Access individual properties using TryGetProperty
-            string currentStatus, changeStatusTo, reasonForChangingCardStatus;
+                // Access individual properties using TryGetProperty
+                string currentStatus = GetPropertyValue(jsonDocument, "Currentstatus");
+                string changeStatusTo = GetPropertyValue(jsonDocument, "ChangeStatusto");
+                string reasonForChangingCardStatus = GetPropertyValue(jsonDocument, "reasonForchangingcardstatus");
 
-            if (jsonDocument.RootElement.TryGetProperty("Currentstatus", out var currentStatusElement))
-                currentStatus = currentStatusElement.GetString();
-            else
-                currentStatus = null;
+                // Resolution message.
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
 
-            if (jsonDocument.RootElement.TryGetProperty("ChangeStatusto", out var changeStatusToElement))
-                changeStatusTo = changeStatusToElement.GetString();
-            else
-                changeStatusTo = null;
-
-            if (jsonDocument.RootElement.TryGetProperty("reasonForchangingcardstatus", out var reasonElement))
-                reasonForChangingCardStatus = reasonElement.GetString();
-            else
-                reasonForChangingCardStatus = null;
-
-            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
-            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
-            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
-
-            // Construct the final message
-            return $"{caseID}\n" +
-                   $"Due Date: {dueDate}\n" +
-                   $"Created On: {createdOn}\n" +
-                   $"Case Created By: {caseCreatedBy}\n" +
-                   $"Case Ticket Status: {caseTicketStatus}\n" +
-                   $"Case Issue: {caseIssue}\n" +
-                   $"Card Information: {cardInformation}\n" +
-                   $"Case Topic: {caseTopic}\n" +
-                   $"Current Status: {currentStatus}\n" +
-                   $"Change Status To: {changeStatusTo}\n" +
-                   $"Reason for Changing Card Status: {reasonForChangingCardStatus}\n" +
-                   $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
-                   $"First Contact Resolution: {firstContactResolution}\n" +
-                   $"Resolution Description: {firstContactResolutionDescription}";
+                // Construct the final message
+                return commonMessage +
+                       $"Current Status: {currentStatus}\n" +
+                       $"Change Status To: {changeStatusTo}\n" +
+                       $"Reason for Changing Card Status: {reasonForChangingCardStatus}\n" +
+                       resolutionMessage;
+            }
+            catch(System.Text.Json.JsonException jsonEx)
+            {
+                logger.LogError($"JSON Exception occured for getting the schema defintion for change card status case topic: {jsonEx}");
+                return string.Empty;
+            }
+            catch(Exception ex)
+            {
+                logger.LogError($"Exception occured for getting the schema defintion for change card status case topic: {ex.Message}");
+                return string.Empty;
+            }
         }
 
-        public string GetSchemaDefinitionForWalletTransferCaseTopic(CaseTickets caseTickets)
+        /// <summary>
+        /// Gets the schema for the billing issues case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForBillingIssuesCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
-            string caseID = $"{caseTickets.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string dueDate = DateUtils.GetDateString(caseTickets?.DueDate);
-            string createdOn = DateUtils.GetDateString(caseTickets?.CreateDate);
-            string caseCreatedBy = caseTickets?.CreateUser;
-            string assignedTo = caseTickets?.AssignedTo;
-            string caseTicketStatus = caseTickets?.CaseTicketStatus;
-            string caseIssue = caseTickets?.CaseTopic;
-            string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
-            string caseTopic = caseTickets.CaseTopic;
+            try
+            {
+                string commonMessage = ConstructCommonMessage(caseTickets);
 
-            // Parse JSON string to JsonDocument
-            JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
+                // Assuming jsonString is your JSON string
+                Root root = JsonConvert.DeserializeObject<Root>(caseTickets?.CaseTicketData);
 
-            string fromWallet, toWallet, balanceAmount, reasonForMissingFunds;
+                // Gets the order information.
+                string orderInformation = GetOrderInformation(root);
 
-            if (jsonDocument.RootElement.TryGetProperty("FromWalletValue", out var fromWalletValue))
-                fromWallet = fromWalletValue.GetString();
-            else
-                fromWallet = null;
+                // Is benefit applied.
+                string wasBenefitApplied = root.Order != null ? root.Order.BenefitApplied ? "Yes" : "No" : "Not found";
 
-            if (jsonDocument.RootElement.TryGetProperty("ToWalletValue", out var toWalletValue))
-                toWallet = toWalletValue.GetString();
-            else
-                toWallet = null;
-
-            if (jsonDocument.RootElement.TryGetProperty("BalanceAmount", out var balance))
-                balanceAmount = balance.GetRawText();
-            else
-                balanceAmount = null;
-
-            if (jsonDocument.RootElement.TryGetProperty("Reason", out var reasonElement))
-                reasonForMissingFunds = reasonElement.GetString();
-            else
-                reasonForMissingFunds = null;
-
-            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
-            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
-            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
-
-            // Construct the final message
-            return $"Case ID#: {caseID}\n" +
-                   $"Due Date: {dueDate}\n" +
-                   $"Created On: {createdOn}\n" +
-                   $"Case Created By: {caseCreatedBy}\n" +
-                   $"Case Ticket Status: {caseTicketStatus}\n" +
-                   $"Case Issue: {caseIssue}\n" +
-                   $"Card Information: {cardInformation}\n" +
-                   $"Case Topic: {caseTopic}\n" +
-                   $"From Wallet: {fromWallet}\n" +
-                   $"To Wallet: {toWallet}\n" +
-                   $"Balance Amount: {balanceAmount}\n" +
-                   $"Reason for Missing Funds: {reasonForMissingFunds}\n" +
-                   $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
-                   $"First Contact Resolution: {firstContactResolution}\n" +
-                   $"Resolution Description: {firstContactResolutionDescription}";
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+                return commonMessage +
+                       $"Order Information: {orderInformation}\n" +
+                       $"Was Benefit Applied: {wasBenefitApplied}\n" +
+                       resolutionMessage;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for billing issues case topic: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"An error occurred for billing issues case topic: {ex.Message}");
+                return string.Empty;
+            }
         }
 
-        public string GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(CaseTickets caseTickets)
+        /// <summary>
+        /// Gets the schema for the shipment related issues case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            return GetMessageForHAAndOTCCaseTopics(caseTickets, logger);
+        }
+
+        /// <summary>
+        /// Gets the schema for the provider issues case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger for logging.</param>
+        /// <returns>Returns the schema definition in json.</returns>
+        public string GetSchemaDefinitionForProviderIssuesCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            try
+            {
+                string commonMessage = ConstructCommonMessage(caseTickets);
+
+                // Deserialize the JSON string
+                var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+
+                // Extract values
+                string memberAppointmentId = jsonObject?["appointment"]?["memberAppointmentId"]?.ToString();
+                string providerName = jsonObject?["appointment"]?["providerName"]?.ToString();
+                string providerLocation = jsonObject?["appointment"]?["providerLocation"]?.ToString();
+                string hcpName = jsonObject?["appointment"]?["hcpName"]?.ToString();
+
+                // Deserialize appointmentProcessData
+                var appointmentProcessData = JsonConvert.DeserializeObject<JObject>(jsonObject?["appointment"]?["appointmentProcessData"]?.ToString());
+                string dateOfService = DateUtils.GetDateString(Convert.ToDateTime(appointmentProcessData?["DateOfService"]));
+
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+                return commonMessage +
+                       $"Appointment ID: #{memberAppointmentId}\n" +
+                       $"Provider Name: {providerName}\n" +
+                       $"Provider Location: {providerLocation}\n" +
+                       $"HCP Name: {hcpName}\n" +
+                       $"Date of Interaction: {dateOfService}\n" +
+                       resolutionMessage;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for provider issues case topic: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"An error occurred for provider issues case topic: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets the schema for the card declined case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger for logging.</param>
+        /// <returns>Returns the schema definition in json.</returns>
+        public string GetSchemaDefinitionForCardDeclinedCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            try
+            {
+                string commonMessage = ConstructCommonMessage(caseTickets);
+
+                var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+
+                // Accessing TransactionDate, TransactionDetails, and Reason
+                string transactionDate = jsonObject?["TransactionDate"]?.ToString();
+                string transactionDetails = jsonObject?["TransactionDetails"]?.ToString();
+                string reason = jsonObject?["Reason"]?.ToString();
+
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+                return commonMessage +
+                       $"Transaction Date: {DateUtils.GetDateString(Convert.ToDateTime(transactionDate))}\n" +
+                       $"Transaction Details: {transactionDetails}\n" +
+                       $"Reason for: {reason}\n" +
+                       resolutionMessage;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for card declined case topic: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"An error occurred for card declined case topic: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets the schema for the flex issue case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger for logging.</param>
+        /// <returns>Returns the schema definition in json.</returns>
+        public string GetSchemaDefinitionForFlexIssueCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            try
+            {
+                string commonMessage = ConstructCommonMessage(caseTickets);
+
+                var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+
+                // Accessing TransactionDate, TransactionDetails, and Reason
+                string fromWalletValue = jsonObject?["FromWalletValue"]?.ToString();
+                string toWalletValue = jsonObject?["ToWalletValue"]?.ToString();
+                double balanceAmount = jsonObject?["BalanceAmount"]?.Value<double>() ?? 0.0; // Assuming BalanceAmount is a numeric value
+                string reason = jsonObject?["Reason"]?.ToString();
+
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+                return commonMessage +
+                       $"Wallet Transfer Reason: Transaction amount of ${balanceAmount} from {fromWalletValue} to {toWalletValue} wallet with reason {reason}\n" +
+                       resolutionMessage;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for flex issue case topic: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {               
+                logger?.LogError($"An error occurred for flex issue case topic: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets the schema for the wallet transfer case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger for logging.</param>
+        /// <returns>Returns the schema definition in JSON.</returns>
+        public string GetSchemaDefinitionForWalletTransferCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            try
+            {
+                // Common message.
+                string commonMessage = ConstructCommonMessage(caseTickets);
+
+                // Parse JSON string to JsonDocument
+                JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
+
+                // Access individual properties using the GetPropertyValue method
+                var fromWallet = GetPropertyValue(jsonDocument, "FromWalletValue");
+                var toWallet = GetPropertyValue(jsonDocument, "ToWalletValue");
+                var balanceAmount = GetPropertyValue(jsonDocument, "BalanceAmount");
+                var reasonForMissingFunds = GetPropertyValue(jsonDocument, "Reason");
+
+                // Resolution message.
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+                // Construct the final message
+                return commonMessage +
+                       $"From Wallet: {fromWallet}\n" +
+                       $"To Wallet: {toWallet}\n" +
+                       $"Balance Amount: {balanceAmount}\n" +
+                       $"Reason for Missing Funds: {reasonForMissingFunds}\n" +
+                       resolutionMessage;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for wallet transfer case topic: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"An error occurred for wallet transfer case topic: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets the schema for the cardholder address update case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger for logging.</param>
+        /// <returns>Returns the schema definition in JSON.</returns>
+        public string GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            try
+            {
+                // Common message.
+                string commonMessage = ConstructCommonMessage(caseTickets);
+
+                // Parse JSON string to JsonDocument
+                JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
+
+                // Access individual properties using the GetPropertyValue method
+                string reasonForCardHolderAddressUpdate = GetPropertyValue(jsonDocument, "reason.value");
+                string newFISAddress = GetPropertyValue(jsonDocument, "address.firstname") + " " +
+                                       GetPropertyValue(jsonDocument, "address.lastname") + ", " +
+                                       GetPropertyValue(jsonDocument, "address.address1") + ", " +
+                                       GetPropertyValue(jsonDocument, "address.address2") + ", " +
+                                       GetPropertyValue(jsonDocument, "address.city") + ", " +
+                                       GetPropertyValue(jsonDocument, "address.state") + ", " +
+                                       GetPropertyValue(jsonDocument, "address.stateCode") + ", " +
+                                       GetPropertyValue(jsonDocument, "address.zipcode");
+
+                // Resolution message.
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+                // Construct the final formatted string
+                return commonMessage +
+                       $"Reason for Cardholder Address Update: {reasonForCardHolderAddressUpdate}\n" +
+                       $"New FIS Address: {newFISAddress}\n" +
+                       resolutionMessage;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for cardholder address update case topic: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"An error occurred for cardholder address update case topic: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets the schema for the card replacement case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger for logging.</param>
+        /// <returns>Returns the schema definition in JSON.</returns>
+        public string GetSchemaDefinitionForCardReplacementCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            try
+            {
+                // Common message.
+                string commonMessage = ConstructCommonMessage(caseTickets);
+
+                // Parse JSON string to JsonDocument
+                JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
+
+                // Access individual properties using the GetPropertyValue method
+                string reasonForCardReplacement = GetPropertyValue(jsonDocument, "reason.value");
+                string mailingAddress = GetPropertyValue(jsonDocument, "address.firstname") + " " +
+                                        GetPropertyValue(jsonDocument, "address.lastname") + ", " +
+                                        GetPropertyValue(jsonDocument, "address.address1") + ", " +
+                                        GetPropertyValue(jsonDocument, "address.address2") + ", " +
+                                        GetPropertyValue(jsonDocument, "address.city") + ", " +
+                                        GetPropertyValue(jsonDocument, "address.state") + ", " +
+                                        GetPropertyValue(jsonDocument, "address.stateCode") + ", " +
+                                        GetPropertyValue(jsonDocument, "address.zipcode");
+
+                // Resolution message.
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+                // Construct the final formatted string
+                return commonMessage +
+                       $"Reason for Card Replacement: {reasonForCardReplacement}\n" +
+                       $"Mailing Address: {mailingAddress}\n" +
+                       resolutionMessage;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for card replacement case topic: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"An error occurred for card replacement case topic: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets the schema for the hearing id  case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForHearingAidCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            return GetMessageForHAAndOTCCaseTopics(caseTickets,logger);
+        }
+
+        /// <summary>
+        /// Gets the schema for the other case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForOthersCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            string commonMessage = ConstructCommonMessage(caseTickets);
+            string resolutionMessage = ConstructResolutionMessage(caseTickets);
+            return commonMessage + resolutionMessage;
+        }
+
+        /// <summary>
+        /// Gets the schema for the OTC case topic.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger.<see cref="ILogger"/></param>
+        /// <returns>Returns the schema defintion in json.</returns>
+        public string GetSchemaDefinitionForOTCCaseTopic(CaseTickets caseTickets, ILogger logger)
+        {
+            return GetMessageForHAAndOTCCaseTopics(caseTickets, logger);
+        }
+
+
+        #region Private Methods
+
+        /// <summary>
+        /// Gets the message for HA and OTC case topics.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <param name="logger">Logger for logging.</param>
+        /// <returns>Returns the schema definition in json.</returns>
+        private string GetMessageForHAAndOTCCaseTopics(CaseTickets caseTickets, ILogger logger)
+        {
+            try
+            {
+                // Gets the common message.
+                string commonMessage = ConstructCommonMessage(caseTickets);
+
+                // Assuming jsonString is your JSON string
+                Root root = JsonConvert.DeserializeObject<Root>(caseTickets?.CaseTicketData);
+
+                // Gets the order information.
+                string orderInformation = GetOrderInformation(root);
+
+                // HA Item Information
+                StringBuilder haItemsInformation = new StringBuilder();
+                decimal totalPriceImpacted = 0;
+                string totalPriceImpactedMessage = string.Empty;
+
+                if (root.ItemInfo != null && root.ItemInfo.Count > 0)
+                {
+                    foreach (var haItem in root.ItemInfo)
+                    {
+                        haItemsInformation.AppendLine($"Item ID: {haItem?.ItemId}");
+                        haItemsInformation.AppendLine($"Total Quantity: {haItem?.TotalQuantity}");
+                        haItemsInformation.AppendLine($"Price: ${haItem?.Price}");
+                        haItemsInformation.AppendLine($"Member Issue: {haItem.Issue?.FirstOrDefault()?.IssueName}");
+                        haItemsInformation.AppendLine($"Impacted Quantity: {haItem?.ImpactedQuantity}");
+                        haItemsInformation.AppendLine($"Impacted Price: ${haItem?.ImpactedPrice}");
+                        haItemsInformation.AppendLine();
+
+                        totalPriceImpacted += haItem.ImpactedPrice;
+                    }
+                    totalPriceImpactedMessage = $"Total Price Impacted: ${totalPriceImpacted}";
+                }
+
+                string resolutionMessage = ConstructResolutionMessage(caseTickets);
+
+                // Construct the final message
+                string message = commonMessage +
+                    $"Order Information: {orderInformation}\n" +
+                    (root.ItemInfo != null && root.ItemInfo.Count > 0 ? $"Item Information:\n{haItemsInformation}\n" : string.Empty) +
+                    $"{totalPriceImpactedMessage}\n" +
+                    resolutionMessage;
+
+                return message;
+            }
+            catch (System.Text.Json.JsonException jsonEx)
+            {
+                logger?.LogError($"Error parsing JSON for HA and OTC case topics: {jsonEx.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"An error occurred for HA and OTC case topics: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        /// <summary>
+        /// Constructs the common message for all case topics.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.</param>
+        /// <returns>Returns the common message.</returns>
+        private string ConstructCommonMessage(CaseTickets caseTickets)
         {
             string caseID = $"{caseTickets?.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string dueDate = DateUtils.GetDateString(caseTickets?.DueDate);
+            string createdBy = caseTickets?.CreateUser;
             string createdOn = DateUtils.GetDateString(caseTickets?.CreateDate);
-            string caseCreatedBy = caseTickets?.CreateUser;
+            string issueGenre = caseTickets?.CaseCategory;
+            string issueType = caseTickets?.CaseType;
+            string issueTopic = caseTickets?.CaseTopic;
+            string assignedTo = caseTickets?.AssignToFullName;
             string caseTicketStatus = caseTickets?.CaseTicketStatus;
-            string caseIssue = caseTickets?.CaseTopic;
             string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
-            string caseTopic = caseTickets.CaseTopic;
 
-            // Parse JSON string to JsonDocument
-            JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
-
-            string reasonForCardHolderAddressUpdate = null;
-            string newFISAddress = null;
-
-            // Access the "reason" field
-            if (jsonDocument.RootElement.TryGetProperty("reason", out var reasonElement))
-            {
-                // Access the "value" field within "reason"
-                if (reasonElement.TryGetProperty("value", out var valueElement))
-                {
-                    reasonForCardHolderAddressUpdate = valueElement.GetString();
-                }
-            }
-
-            // Access the "address" field
-            if (jsonDocument.RootElement.TryGetProperty("address", out var addressElement))
-            {
-                // Concatenate values from "firstname" to "zipcode"
-                newFISAddress = $"{addressElement.GetProperty("firstname").GetString()} " +
-                                $"{addressElement.GetProperty("lastname").GetString()}, " +
-                                $"{addressElement.GetProperty("address1").GetString()}, " +
-                                $"{addressElement.GetProperty("address2").GetString()}, " +
-                                $"{addressElement.GetProperty("city").GetString()}, " +
-                                $"{addressElement.GetProperty("state").GetString()}, " +
-                                $"{addressElement.GetProperty("stateCode").GetString()}, " +
-                                $"{addressElement.GetProperty("zipcode").GetString()}";
-            }
-
-            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
-            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
-            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
-
-            // Construct the final formatted string
-            return $"Case ID#:  {caseID}\n" +
-                   $"Due Date: {dueDate}\n" +
-                   $"Created On: {createdOn}\n" +
-                   $"Case Created By: {caseCreatedBy}\n" +
-                   $"Case Ticket Status: {caseTicketStatus}\n" +
-                   $"Case Issue: {caseIssue}\n" +
-                   $"Card Information: {cardInformation}\n" +
-                   $"Case Topic: {caseTopic}\n" +
-                   $"Reason for Cardholder Address Update: {reasonForCardHolderAddressUpdate}\n" +
-                   $"New FIS Address: {newFISAddress}\n" +
-                   $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
-                   $"First Contact Resolution: {firstContactResolution}\n" +
-                   $"Resolution Description: {firstContactResolutionDescription}";
-        }
-
-        public string GetSchemaDefinitionForCardReplacementCaseTopic(CaseTickets caseTickets)
-        {
-            string caseID = $"{caseTickets?.CaseTicketNumber} - {caseTickets?.CaseTopic}";
-            string dueDate = DateUtils.GetDateString(caseTickets.DueDate);
-            string createdOn = DateUtils.GetDateString(caseTickets.CreateDate);
-            string caseCreatedBy = caseTickets?.CreateUser;
-            string assignedTo = caseTickets?.AssignedTo;
-            string caseTicketStatus = caseTickets?.CaseTicketStatus;
-            string caseIssue = caseTickets?.CaseTopic;
-            string cardInformation = $"XXXX-XXXX-XXXX-{caseTickets?.CardLast4digits}";
-            string caseTopic = caseTickets?.CaseTopic;
-
-            // Parse JSON string to JsonDocument
-            JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
-
-            string reasonForCardReplacement = null;
-            string mailingAddress = null;
-
-            // Access the "reason" field
-            if (jsonDocument.RootElement.TryGetProperty("reason", out var reasonElement))
-            {
-                // Access the "value" field within "reason"
-                if (reasonElement.TryGetProperty("value", out var valueElement))
-                {
-                    reasonForCardReplacement = valueElement.GetString();
-                }
-            }
-
-            // Access the "address" field
-            if (jsonDocument.RootElement.TryGetProperty("address", out var addressElement))
-            {
-                // Concatenate values from "firstname" to "zipcode"
-                mailingAddress = $"{addressElement.GetProperty("firstname").GetString()} " +
-                                $"{addressElement.GetProperty("lastname").GetString()}, " +
-                                $"{addressElement.GetProperty("address1").GetString()}, " +
-                                $"{addressElement.GetProperty("address2").GetString()}, " +
-                                $"{addressElement.GetProperty("city").GetString()}, " +
-                                $"{addressElement.GetProperty("state").GetString()}, " +
-                                $"{addressElement.GetProperty("stateCode").GetString()}, " +
-                                $"{addressElement.GetProperty("zipcode").GetString()}";
-            }
-
-            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
-            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
-            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
-
-            // Construct the final formatted string
+            // Construct the common message
             return $"Case ID#: {caseID}\n" +
-                   $"Due Date: {dueDate}\n" +
+                   $"Created By: {createdBy}\n" +
                    $"Created On: {createdOn}\n" +
-                   $"Case Created By: {caseCreatedBy}\n" +
+                   $"Issue Genre: {issueGenre}\n" +
+                   $"Issue Type: {issueType}\n" +
+                   $"Issue Topic: {issueTopic}\n" +
+                   $"Assigned To: {assignedTo}\n" +
                    $"Case Ticket Status: {caseTicketStatus}\n" +
-                   $"Case Issue: {caseIssue}\n" +
-                   $"Card Information: {cardInformation}\n" +
-                   $"Case Topic: {caseTopic}\n" +
-                   $"Reason for Card Replacement: {reasonForCardReplacement}\n" +
-                   $"Mailing Address: {mailingAddress}\n" +
-                   $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
-                   $"First Contact Resolution: {firstContactResolution}\n" +
-                   $"Resolution Description: {firstContactResolutionDescription}";
+                   $"Card Information: {cardInformation}\n";
         }
 
-        public string GetSchemaDefinitionForHearingAidCaseTopic(CaseTickets caseTickets)
+        /// <summary>
+        /// Constructs the resolution message for all case tickets.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.</param>
+        /// <returns>Returns the resolution message.</returns>
+        private string ConstructResolutionMessage(CaseTickets caseTickets)
         {
-            return GetMessageForHAAndOTCCaseTopics(caseTickets);
-        }
-
-        public string GetSchemaDefinitionForOtherCaseTopic(CaseTickets caseTickets)
-        {
-            string memberIssueID = "#" + caseTickets?.CaseNumber;
-            string caseID = $"#{caseTickets?.CaseTopic} - {caseTickets.CaseTicketNumber}";
-            string caseTicketStatus = caseTickets?.CaseTicketStatus;
-            string caseIssue = caseTickets?.CaseTopic;
-
             string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
+            string descriptionOfComplaint = GetDescriptionOfComplaint(caseTickets);
             string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
             string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
             string isWrittenResolutionRequested = (bool)(caseTickets?.IsWrittenResolutionRequested) ? "Yes" : "No";
 
-            // Construct the final message
-            string finalMessage = $"{memberIssueID}\n" +
-                                  $"{caseID}\n" +
-                                  $"Case Ticket Status: {caseTicketStatus}\n" +
-                                  $"Case Issue: {caseIssue}\n" +
-                                  $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
-                                  $"First Contact Resolution: {firstContactResolution}\n" +
-                                  $"Resolution Description: {firstContactResolutionDescription}\n" +
-                                  $"Is Written Resolution Requested: {isWrittenResolutionRequested}";
-
-            return finalMessage;
+            // Construct the resolution message
+            return $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
+                   $"Description of Complaint : {descriptionOfComplaint}\n" +
+                   $"First Contact Resolution: {firstContactResolution}\n" +
+                   $"Resolution Description: {firstContactResolutionDescription}\n" +
+                   $"Is Written Resolution Requested: {isWrittenResolutionRequested}\n";
         }
 
-
-        public string GetSchemaDefinitionForOTCCaseTopic(CaseTickets caseTickets)
+        /// <summary>
+        /// Gets the description of complaint.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <returns>Returns the desciption of complaint.</returns>
+        private string GetDescriptionOfComplaint(CaseTickets caseTickets)
         {
-            return GetMessageForHAAndOTCCaseTopics(caseTickets);
+            // Parse JSON string to JsonDocument
+            JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
+
+            string additionalInfoValue = null;
+
+            // Access the "additinalinfro" field
+            if (jsonDocument.RootElement.TryGetProperty("additinalinfro", out var additionalInfoElement))
+            {
+                additionalInfoValue = additionalInfoElement.GetString();
+            }
+
+            return additionalInfoValue;
         }
 
-        private static string GetMessageForHAAndOTCCaseTopics(CaseTickets caseTickets)
+        /// <summary>
+        /// Gets the order information from the case tickets.
+        /// </summary>
+        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
+        /// <returns>Returns the order information from the case ticket.</returns>
+        private string GetOrderInformation(Root root)
         {
-            // Assuming jsonString is your JSON string
-            Root root = JsonConvert.DeserializeObject<Root>(caseTickets?.CaseTicketData);
-
-            string memberIssueID = "#" + caseTickets?.CaseNumber;
-            string caseID = $"#{caseTickets?.CaseTopic} - {caseTickets.CaseTicketNumber}";
-            string caseTicketStatus = caseTickets?.CaseTicketStatus;
-            string caseIssue = caseTickets?.CaseTopic;
             string orderInformation = string.Empty;
-
             if (root.Order != null)
             {
                 // Order Information
@@ -330,48 +580,40 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                         $"{DateUtils.GetDateString(root?.Order?.OrderDate)} - " +
                         $"${root?.Order?.TotalAmount}";
             }
-
-            // HA Item Information
-            StringBuilder haItemsInformation = new StringBuilder();
-            decimal totalPriceImpacted = 0;
-            string totalPriceImpactedMessage = string.Empty;
-
-            if (root.ItemInfo != null && root.ItemInfo.Count > 0)
-            {
-                foreach (var haItem in root.ItemInfo)
-                {
-                    haItemsInformation.AppendLine($"Item ID: {haItem?.ItemId}");
-                    haItemsInformation.AppendLine($"Total Quantity: {haItem?.TotalQuantity}");
-                    haItemsInformation.AppendLine($"Price: ${haItem?.Price}");
-                    haItemsInformation.AppendLine($"Member Issue: {haItem.Issue?.FirstOrDefault()?.IssueName}");
-                    haItemsInformation.AppendLine($"Impacted Quantity: {haItem?.ImpactedQuantity}");
-                    haItemsInformation.AppendLine($"Impacted Price: ${haItem?.ImpactedPrice}");
-                    haItemsInformation.AppendLine();
-
-                    totalPriceImpacted += haItem.ImpactedPrice;
-                }
-                totalPriceImpactedMessage = $"Total Price Impacted: ${totalPriceImpacted}";
-            }
-
-            string additionalDetailsOrActionTaken = caseTickets?.AdditionalInfo;
-            string firstContactResolution = (bool)caseTickets?.IsFirstCallResolution ? "Yes" : "No";
-            string firstContactResolutionDescription = caseTickets?.FirstCallResolutionDesc;
-            string isWrittenResolutionRequested = (bool)(caseTickets?.IsWrittenResolutionRequested) ? "Yes" : "No";
-
-            // Construct the final message
-            string message = $"{memberIssueID}\n" +
-                                  $"{caseID}\n" +
-                                  $"Case Ticket Status: {caseTicketStatus}\n" +
-                                  $"Case Issue: {caseIssue}\n" +
-                                  $"Order Information: {orderInformation}\n" +
-                                  $"HA Item Information:\n{haItemsInformation}\n" +
-                                  $"{totalPriceImpactedMessage}\n" +
-                                  $"Additional Details or Action Taken: {additionalDetailsOrActionTaken}\n" +
-                                  $"First Contact Resolution: {firstContactResolution}\n" +
-                                  $"Resolution Description: {firstContactResolutionDescription}\n" +
-                                  $"Is Written Resolution Requested: {isWrittenResolutionRequested}";
-
-            return message;
+            return orderInformation;
         }
+
+        /// <summary>
+        /// Gets the property value from the JSON document for the passed property name.
+        /// </summary>
+        /// <param name="jsonDocument">JSON document.<see cref="JsonDocument"/></param>
+        /// <param name="propertyName">Property name.<see cref="propertyName"/></param>
+        /// <returns>Returns the value of the property as a string, or null if not found.</returns>
+        private string GetPropertyValue(JsonDocument jsonDocument, string propertyName)
+        {
+            if (jsonDocument.RootElement.TryGetProperty(propertyName, out var propertyElement))
+            {
+                switch (propertyElement.ValueKind)
+                {
+                    case JsonValueKind.String:
+                        return propertyElement.GetString();
+                    case JsonValueKind.Number:
+                        return propertyElement.ToString();
+                    case JsonValueKind.True:
+                    case JsonValueKind.False:
+                        return propertyElement.GetBoolean().ToString();
+                    default:
+                        return propertyElement.ToString();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+        #endregion
+
     }
 }

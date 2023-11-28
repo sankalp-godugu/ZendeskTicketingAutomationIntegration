@@ -28,6 +28,6 @@ namespace ZenDeskAutomation.DataLayer.Interfaces
         /// <param name="connectionString">Connection string.</param>
         /// <param name="logger">Logger</param>
         /// <returns>Returns the collection of objects.</returns>
-        Task<int> ExecuteNonQuery(string procedureName, long caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger);
+        Task<int> ExecuteNonQuery(string procedureName, long? caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger);
     }
 }
