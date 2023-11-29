@@ -42,7 +42,10 @@ namespace ZenDeskAutomation
 
             builder.Services.AddHttpClient();
 
-            builder.Services.AddApplicationInsightsTelemetry();
+            builder.Services.AddApplicationInsightsTelemetry((options) =>
+            {
+                options.ConnectionString = Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING");
+            });
 
             // Configure logging
             builder.Services.AddLogging(loggingBuilder =>
