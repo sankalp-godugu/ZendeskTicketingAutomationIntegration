@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -38,7 +39,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         public string GetSchemaDefinitionForChangeCardStatusCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
             try
-            {   
+            {
                 // Common message.
                 string commonMessage = ConstructCommonMessage(caseTickets);
 
@@ -60,12 +61,12 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                        $"Reason for Changing Card Status: {reasonForChangingCardStatus}\n" +
                        resolutionMessage;
             }
-            catch(System.Text.Json.JsonException jsonEx)
+            catch (System.Text.Json.JsonException jsonEx)
             {
                 logger.LogError($"JSON Exception occured for getting the schema defintion for change card status case topic: {jsonEx}");
                 return string.Empty;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError($"Exception occured for getting the schema defintion for change card status case topic: {ex.Message}");
                 return string.Empty;
@@ -241,7 +242,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 return string.Empty;
             }
             catch (Exception ex)
-            {               
+            {
                 logger?.LogError($"An error occurred for flex issue case topic: {ex.Message}");
                 return string.Empty;
             }
@@ -312,14 +313,21 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 
                 // Access individual properties using the GetPropertyValue method
                 string reasonForCardHolderAddressUpdate = GetPropertyValue(jsonDocument, "reason.value");
-                string newFISAddress = GetPropertyValue(jsonDocument, "address.firstname") + " " +
-                                       GetPropertyValue(jsonDocument, "address.lastname") + ", " +
-                                       GetPropertyValue(jsonDocument, "address.address1") + ", " +
-                                       GetPropertyValue(jsonDocument, "address.address2") + ", " +
-                                       GetPropertyValue(jsonDocument, "address.city") + ", " +
-                                       GetPropertyValue(jsonDocument, "address.state") + ", " +
-                                       GetPropertyValue(jsonDocument, "address.stateCode") + ", " +
-                                       GetPropertyValue(jsonDocument, "address.zipcode");
+                // Build the newFISAddress string without adding empty components
+                List<string> addressComponents = new List<string>
+                {
+                    GetPropertyValue(jsonDocument, "address.firstname"),
+                    GetPropertyValue(jsonDocument, "address.lastname"),
+                    GetPropertyValue(jsonDocument, "address.address1"),
+                    GetPropertyValue(jsonDocument, "address.address2"),
+                    GetPropertyValue(jsonDocument, "address.city"),
+                    GetPropertyValue(jsonDocument, "address.state"),
+                    GetPropertyValue(jsonDocument, "address.stateCode"),
+                    GetPropertyValue(jsonDocument, "address.zipcode")
+                };
+
+                // Filter out empty components and concatenate them
+                string newFISAddress = string.Join(", ", addressComponents.Where(component => !string.IsNullOrEmpty(component)));
 
                 // Resolution message.
                 string resolutionMessage = ConstructResolutionMessage(caseTickets);
@@ -361,14 +369,22 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
 
                 // Access individual properties using the GetPropertyValue method
                 string reasonForCardReplacement = GetPropertyValue(jsonDocument, "reason.value");
-                string mailingAddress = GetPropertyValue(jsonDocument, "address.firstname") + " " +
-                                        GetPropertyValue(jsonDocument, "address.lastname") + ", " +
-                                        GetPropertyValue(jsonDocument, "address.address1") + ", " +
-                                        GetPropertyValue(jsonDocument, "address.address2") + ", " +
-                                        GetPropertyValue(jsonDocument, "address.city") + ", " +
-                                        GetPropertyValue(jsonDocument, "address.state") + ", " +
-                                        GetPropertyValue(jsonDocument, "address.stateCode") + ", " +
-                                        GetPropertyValue(jsonDocument, "address.zipcode");
+                // Build the mailingAddress string without adding empty components
+                List<string> mailingAddressComponents = new List<string>
+                {
+                    GetPropertyValue(jsonDocument, "address.firstname"),
+                    GetPropertyValue(jsonDocument, "address.lastname"),
+                    GetPropertyValue(jsonDocument, "address.address1"),
+                    GetPropertyValue(jsonDocument, "address.address2"),
+                    GetPropertyValue(jsonDocument, "address.city"),
+                    GetPropertyValue(jsonDocument, "address.state"),
+                    GetPropertyValue(jsonDocument, "address.stateCode"),
+                    GetPropertyValue(jsonDocument, "address.zipcode")
+                };
+
+                // Filter out empty components and concatenate them
+                string mailingAddress = string.Join(", ", mailingAddressComponents.Where(component => !string.IsNullOrEmpty(component)));
+
 
                 // Resolution message.
                 string resolutionMessage = ConstructResolutionMessage(caseTickets);
@@ -400,7 +416,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         /// <returns>Returns the schema defintion in json.</returns>
         public string GetSchemaDefinitionForHearingAidCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
-            return GetMessageForHAAndOTCCaseTopics(caseTickets,logger);
+            return GetMessageForHAAndOTCCaseTopics(caseTickets, logger);
         }
 
         /// <summary>
@@ -589,26 +605,34 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         /// <param name="jsonDocument">JSON document.<see cref="JsonDocument"/></param>
         /// <param name="propertyName">Property name.<see cref="propertyName"/></param>
         /// <returns>Returns the value of the property as a string, or null if not found.</returns>
-        private string GetPropertyValue(JsonDocument jsonDocument, string propertyName)
+        private string GetPropertyValue(JsonDocument jsonDocument, string propertyPath)
         {
-            if (jsonDocument.RootElement.TryGetProperty(propertyName, out var propertyElement))
+            JsonElement element = jsonDocument.RootElement;
+
+            foreach (var property in propertyPath.Split('.'))
             {
-                switch (propertyElement.ValueKind)
+                if (element.TryGetProperty(property, out var nextElement))
                 {
-                    case JsonValueKind.String:
-                        return propertyElement.GetString();
-                    case JsonValueKind.Number:
-                        return propertyElement.ToString();
-                    case JsonValueKind.True:
-                    case JsonValueKind.False:
-                        return propertyElement.GetBoolean().ToString();
-                    default:
-                        return propertyElement.ToString();
+                    element = nextElement;
+                }
+                else
+                {
+                    // Handle the case where the property doesn't exist
+                    return null;
                 }
             }
-            else
+
+            switch (element.ValueKind)
             {
-                return null;
+                case JsonValueKind.String:
+                    return element.GetString();
+                case JsonValueKind.Number:
+                    return element.ToString();
+                case JsonValueKind.True:
+                case JsonValueKind.False:
+                    return element.GetBoolean().ToString();
+                default:
+                    return element.ToString();
             }
         }
 
