@@ -58,7 +58,7 @@ namespace ZenDeskAutomation
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response message containing a JSON result.")]
         public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger _logger)
         {
-            return ZenDeskTicketUtilities.ProcessZenDeskTickets(_logger, _configuration, _dataLayer, _zdClientService);
+            return ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(_logger, _configuration, _dataLayer, _zdClientService);
         }
 
         #endregion
@@ -106,7 +106,7 @@ namespace ZenDeskAutomation
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response message containing a JSON result.")]
         public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger _logger)
         {
-            return ZenDeskTicketUtilities.ProcessZenDeskTickets(_logger, _configuration, _dataLayer, _zdClientService);
+            return ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(_logger, _configuration, _dataLayer, _zdClientService);
         }
 
         #endregion
@@ -148,7 +148,7 @@ namespace ZenDeskAutomation
         {
             if (_configuration.GetValue("IsCMTJobEnabled", true))
             {
-                ZenDeskTicketUtilities.ProcessZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
+                ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
             }
             else
             {
@@ -193,7 +193,7 @@ namespace ZenDeskAutomation
         {
             if (_configuration.GetValue("IsAdminJobEnabled", true))
             {
-                ZenDeskTicketUtilities.ProcessZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
+                ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
             }
             else
             {
