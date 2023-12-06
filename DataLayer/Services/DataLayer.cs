@@ -83,7 +83,7 @@ namespace ZenDeskAutomation.DataLayer.Services
                     command.CommandType = CommandType.StoredProcedure;
 
                     // Input parameters
-                    command.Parameters.AddWithValue("@CaseTicketID", caseTicketId);
+                    command.Parameters.AddWithValue("@OrderChangeRequestID", caseTicketId);
                     command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
 
                     // Output parameter

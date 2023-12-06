@@ -155,7 +155,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                 });
 
-                return new OkObjectResult("Task of CMT to Zendesk has been allocated to azure function and see logs for more information about its progress...");
+                return new OkObjectResult("Task of OTC reship or refund orders to Zendesk has been allocated to azure function and see logs for more information about its progress...");
             }
             catch (Exception ex)
             {

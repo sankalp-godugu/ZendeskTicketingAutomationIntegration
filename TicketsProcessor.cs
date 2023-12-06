@@ -100,13 +100,13 @@ namespace ZenDeskAutomation
         /// </summary>
         /// <param name="req">Request.<see cref="req"/></param>
         /// <param name="_logger">Logger.<see cref="ILogger"/></param>
-        [FunctionName("AdminTicketsProcessor")]
+        [FunctionName("OTCTicketsProcessor")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "name" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response message containing a JSON result.")]
         public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger _logger)
         {
-            return ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(_logger, _configuration, _dataLayer, _zdClientService);
+            return ZenDeskTicketUtilities.ProcessAdminZenDeskTickets(_logger, _configuration, _dataLayer, _zdClientService);
         }
 
         #endregion

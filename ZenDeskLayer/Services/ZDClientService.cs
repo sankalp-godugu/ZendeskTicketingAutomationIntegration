@@ -1,9 +1,12 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.CodeAnalysis.Operations;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -210,8 +213,78 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         {
             try
             {
+                // Constructs the zendesk fields.
+                string zenDeskSubject = $"Member ID: {order?.NHMemberId} - Request Type: {order?.RequestType}";
+                string brandValue = _configuration["BrandValue"] ?? "16807551788311";
+                string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
+                string nhMemberID = _configuration["NHMemberID"] ?? "19437509464343";
+                string assignee = _configuration["Assignee"] ?? "16807583954071";
+                string memberName = _configuration["MemberName"] ?? "19437544388375";
+
+                // Constructs the description for the OTC orders.
+                string OrderID = order?.OrderId.ToString() ?? string.Empty;
+                string CarrierName = order?.CarrierName ?? string.Empty;
+                string NHMemberID = order?.NHMemberId.ToString() ?? string.Empty;
+                string MemberName = order?.UserName?.ToString() ?? string.Empty;
+                string RequestedDate = order?.RequestedDate ?? string.Empty;
+                string SubmittedBy = order?.SubmittedBy ?? string.Empty;
+                string RequestType = order?.RequestType ?? string.Empty;
+
+                // HA Item Information
+                StringBuilder orderManagementInformation = new StringBuilder();
+                List<ItemDetail> ItemDetails = JsonConvert.DeserializeObject<List<ItemDetail>>(order.ItemDetails);
+                List<ItemComment> ItemComments = JsonConvert.DeserializeObject<List<ItemComment>>(order.ItemComments);
+                foreach (var itemDetail in ItemDetails)
+                {
+                    orderManagementInformation.AppendLine($"Item Name: {itemDetail?.ItemName}");
+                    orderManagementInformation.AppendLine($"Units: {itemDetail?.Quantity}");
+                    orderManagementInformation.AppendLine($"Unit Price: {itemDetail?.UnitPrice}");
+                    orderManagementInformation.AppendLine($"Total Price: {itemDetail?.TotalPrice}");
+                    orderManagementInformation.AppendLine($"Reason & Comments: {ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString()}");
+                    orderManagementInformation.AppendLine();
+                }
+
+                var descriptionOrComment = $"Order ID: {OrderID}\n" +
+                   $"Carrier Name: {CarrierName}\n" +
+                   $"NHMemberID: {NHMemberID}\n" +
+                   $"Member Name: {memberName}\n" +
+                   $"Requested Date: {RequestedDate}\n" +
+                   $"Submitted By: {SubmittedBy}\n" +
+                   $"Request Type: {RequestType}\n" +
+                   $"Product Details: {orderManagementInformation}\n";
+
+                // Create the dynamic object
+                var dynamicTicket = new
+                {
+                    ticket = new
+                    {
+                        assignee_email = _configuration["Email"],
+                        brand_id = brandValue,
+                        description = descriptionOrComment,
+                        custom_fields = new[]
+                        {
+                                new { id = nhMemberID, value = order?.NHMemberId },
+                                new { id = memberName, value = order?.UserName }
+                            },
+                        email_ccs = new[]
+                            {
+                                new { user_email = _configuration["Email"], action = "put" }
+                            },
+                        priority = "high",
+                        requester = new { email = _configuration["Email"] },
+                        custom_status_id = GetCustomStatusIdForOTCOrders(order.Status),
+                        subject = zenDeskSubject,
+                        ticket_form_id = ticketFormValue,
+                        tags = new List<string>(),
+                        comment = new { body = order?.TicketId != null && order?.TicketId?.Length > 0 ? descriptionOrComment : null }
+                    }
+                };
+
+                // Serialize the dynamic object to JSON
+                string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
+
                 // Create StringContent from JSON payload
-                StringContent content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
+                StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 return content;
             }
             catch (Exception ex)
@@ -220,6 +293,30 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets the custom status for OTC refund and reship orders.
+        /// </summary>
+        /// <param name="status">Status</param>
+        /// <returns>Returns the field value from the order status.</returns>
+        public long GetCustomStatusIdForOTCOrders(string status)
+        {
+            string uppercasedStatus = status?.ToUpper() ?? string.Empty;
+
+            switch (uppercasedStatus)
+            {
+                case "PENDING":
+                    return NamesWithTagsConstants.GetTagValueByTicketStatus("Pending");
+                case "APPROVED":
+                    return NamesWithTagsConstants.GetTagValueByTicketStatus("Closed Approved");
+                case "REJECTED":
+                    return NamesWithTagsConstants.GetTagValueByTicketStatus("Closed Declined");
+                default:
+                    return 0;
+            }
+        }
+
+
 
         /// <summary>
         /// Gets the ticket description from the case topic.

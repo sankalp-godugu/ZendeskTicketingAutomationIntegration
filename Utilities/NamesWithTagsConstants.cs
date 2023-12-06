@@ -21,6 +21,7 @@ namespace ZenDeskTicketProcessJob.Utilities
             { "Closed Partially", 19294912565143 },
             { "In Review", 19294761414807 },
             { "Pending Processing", 19317146798103 },
+            { "Pending", 19437357728407 },
             { "Closed",19317436471447  },
             { "Failed",19294928631191  },
             { "Closed Approved", 19317038480151  },
