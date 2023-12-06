@@ -10,6 +10,7 @@ using ZenDeskAutomation.ZenDeskLayer.Interfaces;
 using ZenDeskAutomation.ZenDeskLayer.Services;
 using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
 using ZenDeskTicketProcessJob.SchemaTemplateLayer.Services;
+using ZenDeskTicketProcessJob.Utilities;
 
 [assembly: FunctionsStartup(typeof(ZenDeskAutomation.Startup))]
 namespace ZenDeskAutomation
@@ -39,6 +40,10 @@ namespace ZenDeskAutomation
         /// <param name="builder">Builder.<see cref="IFunctionsHostBuilder"/></param>
         public override void Configure(IFunctionsHostBuilder builder)
         {
+
+            // Initialize constants
+            var configuration = builder.GetContext().Configuration;
+            NamesWithTagsConstants.Initialize(configuration);
 
             builder.Services.AddHttpClient();
 

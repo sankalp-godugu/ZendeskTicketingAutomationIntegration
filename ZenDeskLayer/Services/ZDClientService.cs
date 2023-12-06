@@ -296,20 +296,19 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// </summary>
         /// <param name="status">Status</param>
         /// <returns>Returns the field value from the order status.</returns>
-        public long GetCustomStatusIdForOTCOrders(string status)
+        public string GetCustomStatusIdForOTCOrders(string status)
         {
             string uppercasedStatus = status?.ToUpper() ?? string.Empty;
 
             switch (uppercasedStatus)
             {
-                case "PENDING":
-                    return NamesWithTagsConstants.GetTagValueByTicketStatus("New");
-                case "APPROVED":
-                    return NamesWithTagsConstants.GetTagValueByTicketStatus("Closed Approved");
-                case "REJECTED":
-                    return NamesWithTagsConstants.GetTagValueByTicketStatus("Closed Declined");
+                case NBTicketStatusConstants.PENDING:
+                    return NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.New);
+                case NBTicketStatusConstants.APPROVED:
+                case NBTicketStatusConstants.REJECTED:
+                    return NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.Solved);
                 default:
-                    return 0;
+                    return string.Empty;
             }
         }
 
