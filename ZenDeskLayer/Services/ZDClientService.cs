@@ -149,14 +149,14 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             {
                 // Constructs the zendesk fields.
                 string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
-                string brandValue = _configuration["BrandValue"] ?? "16807551788311";
-                string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
-                string nhMemberID = _configuration["NHMemberID"] ?? "17909776781591";
-                string assignee = _configuration["Assignee"] ?? "16807583954071";
-                string memberName = _configuration["MemberName"] ?? "18660702946583";
-                string carrierName = _configuration["Carrier"] ?? "19297442677783";
+                string brandValue = _configuration["BrandValue"] ?? "19437554333463";
+                string ticketFormValue = _configuration["TicketFormValue"] ?? "19437297713303";
+                string nhMemberID = _configuration["NHMemberID"] ?? "19437509464343";
+                string assignee = _configuration["Assignee"] ?? "19437345533591";
+                string memberName = _configuration["MemberName"] ?? "19437544388375";
+                string carrierName = _configuration["Carrier"] ?? "19437549056535";
                 string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
-                string healthPlan = _configuration["HealthPlanName"] ?? "18660737611543";
+                string healthPlan = _configuration["HealthPlanName"] ?? "19437512316823";
 
                 var descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
 
@@ -215,7 +215,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             {
                 // Constructs the zendesk fields.
                 string zenDeskSubject = $"Member ID: {order?.NHMemberId} - Request Type: {order?.RequestType}";
-                string brandValue = _configuration["BrandValue"] ?? "16807551788311";
+                string brandValue = _configuration["BrandValue"] ?? "19437554333463";
                 string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
                 string nhMemberID = _configuration["NHMemberID"] ?? "19437509464343";
 
