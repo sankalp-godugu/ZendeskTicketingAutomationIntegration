@@ -228,6 +228,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 List<ItemComment> ItemComments = JsonConvert.DeserializeObject<List<ItemComment>>(order.ItemComments);
                 foreach (var itemDetail in ItemDetails)
                 {
+                    orderManagementInformation.AppendLine();
                     orderManagementInformation.AppendLine($"Item Name: {itemDetail?.ItemName}");
                     orderManagementInformation.AppendLine($"Units: {itemDetail?.Quantity}");
                     orderManagementInformation.AppendLine($"Unit Price: {itemDetail?.UnitPrice}");
