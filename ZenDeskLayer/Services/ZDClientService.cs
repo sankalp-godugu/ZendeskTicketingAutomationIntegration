@@ -218,8 +218,6 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string brandValue = _configuration["BrandValue"] ?? "16807551788311";
                 string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
                 string nhMemberID = _configuration["NHMemberID"] ?? "19437509464343";
-                string assignee = _configuration["Assignee"] ?? "16807583954071";
-                string memberName = _configuration["MemberName"] ?? "19437544388375";
 
                 // Constructs the description for the OTC orders.
                 string OrderID = order?.OrderId.ToString() ?? string.Empty;
@@ -247,7 +245,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 var descriptionOrComment = $"Order ID: {OrderID}\n" +
                    $"Carrier Name: {CarrierName}\n" +
                    $"NHMemberID: {NHMemberID}\n" +
-                   $"Member Name: {memberName}\n" +
+                   $"Member Name: {MemberName}\n" +
                    $"Requested Date: {RequestedDate}\n" +
                    $"Submitted By: {SubmittedBy}\n" +
                    $"Request Type: {RequestType}\n" +
@@ -263,9 +261,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         description = descriptionOrComment,
                         custom_fields = new[]
                         {
-                                new { id = nhMemberID, value = order?.NHMemberId },
-                                new { id = memberName, value = order?.UserName }
-                            },
+                            new { id = nhMemberID, value = order?.NHMemberId }
+                        },
                         email_ccs = new[]
                             {
                                 new { user_email = _configuration["Email"], action = "put" }
