@@ -306,7 +306,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             switch (uppercasedStatus)
             {
                 case "PENDING":
-                    return NamesWithTagsConstants.GetTagValueByTicketStatus("Pending");
+                    return NamesWithTagsConstants.GetTagValueByTicketStatus("New");
                 case "APPROVED":
                     return NamesWithTagsConstants.GetTagValueByTicketStatus("Closed Approved");
                 case "REJECTED":
