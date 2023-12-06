@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using ZenDeskAutomation.ZenDeskLayer.Interfaces;
@@ -149,14 +150,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             {
                 // Constructs the zendesk fields.
                 string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
-                string brandValue = _configuration["BrandValue"] ?? "19437554333463";
-                string ticketFormValue = _configuration["TicketFormValue"] ?? "19437297713303";
-                string nhMemberID = _configuration["NHMemberID"] ?? "19437509464343";
-                string assignee = _configuration["Assignee"] ?? "19437345533591";
-                string memberName = _configuration["MemberName"] ?? "19437544388375";
-                string carrierName = _configuration["Carrier"] ?? "19437549056535";
                 string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
-                string healthPlan = _configuration["HealthPlanName"] ?? "19437512316823";
 
                 var descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
 
@@ -166,15 +160,16 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     ticket = new
                     {
                         assignee_email = _configuration["Email"],
-                        brand_id = brandValue,
+                        brand_id = _configuration["BrandValue"],
+                        group_id = _configuration["GroupValue"],
                         description = descriptionOrComment,
                         custom_fields = new[]
                         {
-                            new { id = nhMemberID, value = caseTicket?.NHMemberID },
-                            new { id = memberName, value = caseTicket?.MemberName },
-                            new { id = carrierName, value = carrierTag },
-                            new { id = assignee, value = caseTicket.AssignedTo },
-                            new { id = healthPlan, value = caseTicket?.HealthPlanName },
+                            new { id = _configuration["NH/EHID"], value = caseTicket?.NHMemberID },
+                            new { id = _configuration["MemberName"], value = caseTicket?.MemberName },
+                            new { id = _configuration["CarrierName-FromNBDb"], value = carrierTag },
+                            new { id = _configuration["Assignee"], value = caseTicket.AssignedTo },
+                            new { id = _configuration["PlanName"], value = caseTicket?.HealthPlanName },
                         },
                         email_ccs = new[]
                             {
@@ -184,7 +179,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         requester = new { email = _configuration["Email"] },
                         custom_status_id = (CaseTopicConstants.Reimbursement == caseTicket.CaseTopic || CaseTopicConstants.WalletTransfer == caseTicket.CaseTopic) ? NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus) : NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
                         subject = zenDeskSubject,
-                        ticket_form_id = ticketFormValue,
+                        ticket_form_id = _configuration["TicketFormValue"],
                         tags = new List<string>(),
                         comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? descriptionOrComment : null }
                     }
@@ -215,9 +210,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             {
                 // Constructs the zendesk fields.
                 string zenDeskSubject = $"Member ID: {order?.NHMemberId} - Request Type: {order?.RequestType}";
-                string brandValue = _configuration["BrandValue"] ?? "19437554333463";
-                string ticketFormValue = _configuration["TicketFormValue"] ?? "18750942842647";
-                string nhMemberID = _configuration["NHMemberID"] ?? "19437509464343";
+
+                string carrierTag = GetTagValueFromCarrierName(order.CarrierName, order.InsuranceCarrierId);
 
                 // Constructs the description for the OTC orders.
                 string OrderID = order?.OrderId.ToString() ?? string.Empty;
@@ -251,17 +245,21 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                    $"Request Type: {RequestType}\n" +
                    $"Product Details: {orderManagementInformation}\n";
 
+
                 // Create the dynamic object
                 var dynamicTicket = new
                 {
                     ticket = new
                     {
                         assignee_email = _configuration["Email"],
-                        brand_id = brandValue,
+                        brand_id = _configuration["BrandValue"],
+                        group_id = _configuration["GroupValue"],
                         description = descriptionOrComment,
                         custom_fields = new[]
                         {
-                            new { id = nhMemberID, value = order?.NHMemberId }
+                            new { id = _configuration["NH/EHID"], value = order?.NHMemberId },
+                            new { id = _configuration["MemberName"], value = order?.UserName },
+                            new { id = _configuration["CarrierName-FromNBDb"], value = carrierTag }
                         },
                         email_ccs = new[]
                             {
@@ -271,7 +269,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         requester = new { email = _configuration["Email"] },
                         custom_status_id = GetCustomStatusIdForOTCOrders(order.Status),
                         subject = zenDeskSubject,
-                        ticket_form_id = ticketFormValue,
+                        ticket_form_id = _configuration["TicketFormValue"],
                         tags = new List<string>(),
                         comment = new { body = order?.TicketId != null && order?.TicketId?.Length > 0 ? descriptionOrComment : null }
                     }

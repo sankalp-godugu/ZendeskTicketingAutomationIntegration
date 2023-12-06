@@ -13,6 +13,8 @@ namespace ZenDeskTicketProcessJob.Models
         public string NHMemberId { get; set; }
         public string ItemDetails { get; set; }
         public string CarrierName { get; set; }
+
+        public long InsuranceCarrierId { get; set; }
         public string ItemComments { get; set; }
         public string UserName { get; set; }
         public string SubmittedBy { get; set; }

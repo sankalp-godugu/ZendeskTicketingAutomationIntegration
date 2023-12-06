@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using ZenDeskAutomation.DataLayer.Interfaces;
 using ZenDeskAutomation.Utilities;
@@ -119,35 +120,45 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                     _logger?.LogInformation("Started fetching the refund and reship over the counter orders");
 
-                    var orderChangeRequests = await _dataLayer.ExecuteReader<Order>(SQLConstants.GetOrderChangeRequestsForZenDeskIntegration, sqlParams, CRMConnectionString, _logger);
+                    var orderChangeRequestIds = await _dataLayer.ExecuteReader<OrderChangeRequest>(SQLConstants.GetOrderChangeRequestsForZenDeskIntegration, sqlParams, CRMConnectionString, _logger);
 
-                    _logger?.LogInformation($"Ended fetching the refund and reship over the counter orders with count: {orderChangeRequests?.Count}");
+                    _logger?.LogInformation($"Ended fetching the refund and reship over the counter orders with count: {orderChangeRequestIds?.Count}");
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
 
-                    foreach (var orderChangeRequest in orderChangeRequests)
+                    foreach (var orderChangeRequestId in orderChangeRequestIds)
                     {
-                        if (!string.IsNullOrWhiteSpace(orderChangeRequest?.TicketId) && 
-                        Convert.ToInt64(orderChangeRequest?.TicketId) > 0)
+
+                        var keyValuePairs = new Dictionary<string, object>
                         {
-                            _logger?.LogInformation($"Started updating ticket via zendesk API for the admin ticket id: {orderChangeRequest.TicketId} for NHMemberID {orderChangeRequest?.NHMemberId} with details {orderChangeRequest}");
+                            {"@OrderChangeRequestId", orderChangeRequestId.OrderChangeRequestId}
+                        };
 
-                            var ticketNumberReference = await _zdClientService?.UpdateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
+                        var orderChangeRequest = (await _dataLayer.ExecuteReader<Order>(SQLConstants.GetOrderDetailsForZenDeskIntegrationByChangeRequestId, keyValuePairs, CRMConnectionString, _logger)).FirstOrDefault();
 
-                            _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
-
-                            await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, _dataLayer);
-
-                        }
-                        else
+                        if (orderChangeRequest != null)
                         {
-                            _logger?.LogInformation($"Started creating ticket via zendesk API for the order change request id: {orderChangeRequest.OrderChangeRequestId}  for NHMemberID {orderChangeRequest?.NHMemberId} with details {orderChangeRequest}");
+                            if (!string.IsNullOrWhiteSpace(orderChangeRequest?.TicketId) && Convert.ToInt64(orderChangeRequest?.TicketId) > 0)
+                            {
+                                _logger?.LogInformation($"Started updating ticket via zendesk API for the admin ticket id: {orderChangeRequest.TicketId} for NHMemberID {orderChangeRequest?.NHMemberId} with details {orderChangeRequest}");
 
-                            var ticketNumberReference = await _zdClientService.CreateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
+                                var ticketNumberReference = await _zdClientService?.UpdateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
 
-                            _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
+                                _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
 
-                            await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, _dataLayer);
+                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, _dataLayer);
+
+                            }
+                            else
+                            {
+                                _logger?.LogInformation($"Started creating ticket via zendesk API for the order change request id: {orderChangeRequest.OrderChangeRequestId}  for NHMemberID {orderChangeRequest?.NHMemberId} with details {orderChangeRequest}");
+
+                                var ticketNumberReference = await _zdClientService.CreateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
+
+                                _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
+
+                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, _dataLayer);
+                            }
                         }
                     }
 
