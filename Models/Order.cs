@@ -21,7 +21,7 @@ namespace ZenDeskTicketProcessJob.Models
         public string Status { get; set; }
         public string AdminComments { get; set; }
         public decimal TotalPrice { get; set; }
-        public string IsProcessed { get; set; }
+        public bool? IsProcessed { get; set; }
         public string TicketId { get; set; }
     }
 
