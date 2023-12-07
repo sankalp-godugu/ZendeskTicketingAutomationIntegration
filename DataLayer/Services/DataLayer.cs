@@ -72,7 +72,7 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <param name="logger">Logger</param>
         /// <param name="connectionString">Connection string.</param>
         /// <returns>Returns the collection of objects.</returns>
-        public async Task<int> ExecuteNonQuery(string procedureName, long? caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
+        public async Task<int> ExecuteNonQueryForCaseManagement(string procedureName, long? caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
@@ -83,7 +83,63 @@ namespace ZenDeskAutomation.DataLayer.Services
                     command.CommandType = CommandType.StoredProcedure;
 
                     // Input parameters
-                    command.Parameters.AddWithValue("@OrderChangeRequestID", caseTicketId);
+                    command.Parameters.AddWithValue("@caseTicketId", caseTicketId);
+                    command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
+
+                    // Output parameter
+                    SqlParameter resultParameter = new SqlParameter("@Result", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    command.Parameters.Add(resultParameter);
+
+                    try
+                    {
+                        await command.ExecuteNonQueryAsync();
+
+                        // Retrieve the result code
+                        int result = (int)resultParameter.Value;
+
+                        // Log the result
+                        logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
+
+                        return result;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
+                        return -1;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Inserts the data into the table.
+        /// </summary>
+        /// <typeparam name="T">Generic parameter.</typeparam>
+        /// <param name="procedureName">Procedure name.</param>
+        /// <param name="orderChangeRequestId">orderChangeRequestId</param>
+        /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
+        /// <param name="logger">Logger</param>
+        /// <param name="connectionString">Connection string.</param>
+        /// <returns>Returns the collection of objects.</returns>
+        public async Task<int> ExecuteNonQueryForAdminPortal(string procedureName, long? orderChangeRequestId, long zenDeskTicketId, string connectionString, ILogger logger)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (SqlCommand command = new SqlCommand(procedureName, connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    // Input parameters
+                    command.Parameters.AddWithValue("@OrderChangeRequestID", orderChangeRequestId);
                     command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
 
                     // Output parameter

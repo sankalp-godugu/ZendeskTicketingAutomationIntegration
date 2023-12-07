@@ -187,7 +187,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         {
             _logger?.LogInformation($"Updating zendesk ticket details with caseticket id :{caseManagementTicket?.ZendeskTicket}");
 
-            var result = await _dataLayer.ExecuteNonQuery(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
+            var result = await _dataLayer.ExecuteNonQueryForCaseManagement(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
 
             if (result == 1)
             {
@@ -211,7 +211,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         {
             _logger?.LogInformation($"Updating zendesk ticket details with id :{order?.TicketId}");
 
-            var result = await _dataLayer.ExecuteNonQuery(SQLConstants.UpdateZenDeskReferenceForOTCRefundOrReshipOrders, order.OrderChangeRequestId, ticketNumberReference, brConnectionString, _logger);
+            var result = await _dataLayer.ExecuteNonQueryForAdminPortal(SQLConstants.UpdateZenDeskReferenceForOTCRefundOrReshipOrders, order.OrderChangeRequestId, ticketNumberReference, brConnectionString, _logger);
 
             if (result == 1)
             {
