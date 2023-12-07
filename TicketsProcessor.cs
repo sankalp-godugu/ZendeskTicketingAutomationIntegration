@@ -193,7 +193,7 @@ namespace ZenDeskAutomation
         {
             if (_configuration.GetValue("IsAdminJobEnabled", true))
             {
-                ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
+                ZenDeskTicketUtilities.ProcessAdminZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
             }
             else
             {
