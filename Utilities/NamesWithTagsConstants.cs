@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
 
 namespace ZenDeskTicketProcessJob.Utilities
 {
@@ -7,54 +8,41 @@ namespace ZenDeskTicketProcessJob.Utilities
     /// </summary>
     public static class NamesWithTagsConstants
     {
-        private static readonly Dictionary<int, string> requestorTypes = new Dictionary<int, string>
-        {
-            {1, "who_is_contacting_member"},
-            {2, "who_is_contacting_member_representative"},
-            {3, "who_is_contacting_health_plan"},
-        };
+        /// <summary>
+        /// ticket status ids.
+        /// </summary>
+        private static Dictionary<string, string> ticketStatusIds;
 
-        private static readonly Dictionary<string, long> ticketStatusIds = new Dictionary<string, long>
+        /// <summary>
+        /// Initializes the ticket status IDs from configuration.
+        /// </summary>
+        /// <param name="configuration">Configuration instance.</param>
+        public static void Initialize(IConfiguration configuration)
         {
-            { "New", 16807567164695 },
-            { "Reviewed", 19295269450263 },
-            { "Closed Partially", 19294912565143 },
-            { "In Review", 19294761414807 },
-            { "Pending Processing", 19317146798103 },
-            { "Closed",19317436471447  },
-            { "Failed",19294928631191  },
-            { "Closed Approved", 19317038480151  },
-            { "Closed Declined", 19317055615639  },
-        };
-
-
-        private static readonly Dictionary<string, string> issueRelatedTypes = new Dictionary<string, string>
-        {
-            {"OTC/Healthy Foods", "csm-team_otc_healthy_foods"},
-            {"PERS", "csm-team_pers"},
-            {"Transportation", "csm-team_transportation"},
-            {"FLEX Card", "csm-team_flex_card_services"},
-            {"Grievances", "csm-team_grievances"},
-            {"Supervisors", "csm-team_supervisor_callback"},
-            {"General inquiry", "csm-team_general_inquiry"},
-            {"Member Related issues", "csm-team_member_related_issues"}
-        };
-
-        public static long GetTagValueByTicketStatus(string ticketStatus)
-        {
-            if (ticketStatusIds.TryGetValue(ticketStatus?.ToString()?.TrimEnd(), out long tagValue))
+            ticketStatusIds = new Dictionary<string, string>
             {
-                return tagValue;
-            }
-            else
-            {
-                return 0;
-            }
+                { ZenDeskTicketStatusConstants.New, configuration["TicketStatuses:New"] },
+                { ZenDeskTicketStatusConstants.Reviewed, configuration["TicketStatuses:Reviewed"] },
+                { ZenDeskTicketStatusConstants.ClosedPartially, configuration["TicketStatuses:ClosedPartially"] },
+                { ZenDeskTicketStatusConstants.InReview, configuration["TicketStatuses:InReview"] },
+                { ZenDeskTicketStatusConstants.PendingProcessing, configuration["TicketStatuses:PendingProcessing"] },
+                { ZenDeskTicketStatusConstants.Pending, configuration["TicketStatuses:Pending"] },
+                { ZenDeskTicketStatusConstants.Closed,configuration["TicketStatuses:Closed"]  },
+                { ZenDeskTicketStatusConstants.Solved, configuration["TicketStatuses:Solved"] },
+                { ZenDeskTicketStatusConstants.Failed,configuration["TicketStatuses:Failed"]  },
+                { ZenDeskTicketStatusConstants.ClosedApproved, configuration["TicketStatuses:ClosedApproved"]  },
+                { ZenDeskTicketStatusConstants.ClosedDeclined, configuration["TicketStatuses:ClosedDeclined"]  }
+            };
         }
 
-        public static string GetTagValueByRequestorType(int requestorType)
+        /// <summary>
+        /// Gets the tag value by the ticket status.
+        /// </summary>
+        /// <param name="ticketStatus">Ticket status.</param>
+        /// <returns>Returns the field value.</returns>
+        public static string GetTagValueByTicketStatus(string ticketStatus)
         {
-            if (requestorTypes.TryGetValue(requestorType, out string tagValue))
+            if (ticketStatusIds.TryGetValue(ticketStatus?.ToString()?.TrimEnd(), out string tagValue))
             {
                 return tagValue;
             }
@@ -63,18 +51,5 @@ namespace ZenDeskTicketProcessJob.Utilities
                 return string.Empty;
             }
         }
-
-        public static string GetTagValueByIssueRelated(string issueRelated)
-        {
-            if (issueRelatedTypes.TryGetValue(issueRelated, out string mapping))
-            {
-                return mapping;
-            }
-            else
-            {
-                return string.Empty;
-            }
-        }
-
     }
 }
