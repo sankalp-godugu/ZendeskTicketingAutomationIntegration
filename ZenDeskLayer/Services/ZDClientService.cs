@@ -233,11 +233,13 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     orderManagementInformation.AppendLine($"Units: {itemDetail?.Quantity}");
                     orderManagementInformation.AppendLine($"Unit Price: {itemDetail?.UnitPrice}");
                     orderManagementInformation.AppendLine($"Total Price: {itemDetail?.TotalPrice}");
-                    orderManagementInformation.AppendLine($"Reason & Comments: {ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString()}");
+                    orderManagementInformation.AppendLine($"Reason: {ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString()}");
+                    orderManagementInformation.AppendLine($"Comments: {ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Comments?.ToString()}");
                     orderManagementInformation.AppendLine();
                 }
 
                 var descriptionOrComment = $"Order ID: {OrderID}\n" +
+                   $"Status: {order.Status}\n" +
                    $"Carrier Name: {CarrierName}\n" +
                    $"NHMemberID: {NHMemberID}\n" +
                    $"Member Name: {MemberName}\n" +
@@ -305,7 +307,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     return NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.New);
                 case NBTicketStatusConstants.APPROVED:
                 case NBTicketStatusConstants.REJECTED:
-                    return NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.Solved);
+                    return NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.Closed);
                 default:
                     return string.Empty;
             }
