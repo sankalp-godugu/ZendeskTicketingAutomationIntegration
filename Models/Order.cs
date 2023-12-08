@@ -50,4 +50,14 @@ namespace ZenDeskTicketProcessJob.Models
         public string Reason { get; set; }
     }
 
+    public class AdminComments
+    {
+        public string Date { get; set; }
+
+        public string Comment { get; set; }
+        public string ModifyUser { get; set; }
+
+        public string DisplayName { get; set; }
+    }
+
 }

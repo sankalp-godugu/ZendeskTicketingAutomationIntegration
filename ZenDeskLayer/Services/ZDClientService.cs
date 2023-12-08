@@ -224,8 +224,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
 
                 // HA Item Information
                 StringBuilder orderManagementInformation = new StringBuilder();
-                List<ItemDetail> ItemDetails = JsonConvert.DeserializeObject<List<ItemDetail>>(order.ItemDetails);
-                List<ItemComment> ItemComments = JsonConvert.DeserializeObject<List<ItemComment>>(order.ItemComments);
+                List<ItemDetail> ItemDetails = order.ItemDetails != null ? JsonConvert.DeserializeObject<List<ItemDetail>>(order.ItemDetails) : new List<ItemDetail>();
+                List<ItemComment> ItemComments = order.ItemComments != null ? JsonConvert.DeserializeObject<List<ItemComment>>(order.ItemComments) : new List<ItemComment>();
+
                 foreach (var itemDetail in ItemDetails)
                 {
                     orderManagementInformation.AppendLine();
@@ -233,8 +234,37 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     orderManagementInformation.AppendLine($"Units: {itemDetail?.Quantity}");
                     orderManagementInformation.AppendLine($"Unit Price: {itemDetail?.UnitPrice}");
                     orderManagementInformation.AppendLine($"Total Price: {itemDetail?.TotalPrice}");
-                    orderManagementInformation.AppendLine($"Reason: {ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString()}");
-                    orderManagementInformation.AppendLine($"Comments: {ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Comments?.ToString()}");
+                    orderManagementInformation.AppendLine($"Reason & Comments");
+                    orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString());
+                    orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Comments?.ToString());
+
+                    if (order.AdminComments != null)
+                    {
+                        AdminComments adminComments = JsonConvert.DeserializeObject<AdminComments>(order.AdminComments);
+
+                        if (order.Status == NBTicketStatusConstants.APPROVED || order.Status == NBTicketStatusConstants.REJECTED)
+                        {
+                            string statusString = order.Status == NBTicketStatusConstants.REJECTED ? "Rejected" : "Approved";
+
+                            orderManagementInformation.AppendLine($"{statusString} & Comments");
+                            orderManagementInformation.AppendLine($"{adminComments.DisplayName} on {adminComments.Date}");
+
+                            if (order.Status == NBTicketStatusConstants.REJECTED)
+                            {
+                                orderManagementInformation.AppendLine($"Reason: {adminComments.Comment}");
+                            }
+                            else
+                            {
+                                orderManagementInformation.AppendLine("Reason: Approved");
+                            }
+                        }
+                        else
+                        {
+                            orderManagementInformation.AppendLine(string.Empty);
+                        }
+                    }
+
+
                     orderManagementInformation.AppendLine();
                 }
 
