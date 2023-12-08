@@ -242,9 +242,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     {
                         AdminComments adminComments = JsonConvert.DeserializeObject<AdminComments>(order.AdminComments);
 
-                        if (order.Status == NBTicketStatusConstants.APPROVED || order.Status == NBTicketStatusConstants.REJECTED)
+                        if (order.Status.ToUpper() == NBTicketStatusConstants.APPROVED || order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
                         {
-                            string statusString = order.Status == NBTicketStatusConstants.REJECTED ? "Rejected" : "Approved";
+                            string statusString = order.Status.ToUpper() == NBTicketStatusConstants.REJECTED ? "Rejected" : "Approved";
 
                             orderManagementInformation.AppendLine($"{statusString} & Comments");
                             orderManagementInformation.AppendLine($"{adminComments.DisplayName} on {adminComments.Date}");
