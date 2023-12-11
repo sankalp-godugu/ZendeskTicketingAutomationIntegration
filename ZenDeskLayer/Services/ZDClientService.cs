@@ -222,7 +222,40 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string SubmittedBy = order?.SubmittedBy ?? string.Empty;
                 string RequestType = order?.RequestType ?? string.Empty;
 
-                // HA Item Information
+                // Admin or rejected comments information.
+                StringBuilder adminOrRejectedCommentsInformation = new StringBuilder();
+
+                if (order.AdminComments != null)
+                {
+                    AdminComments adminComments = JsonConvert.DeserializeObject<AdminComments>(order.AdminComments);
+
+                    if (order.Status.ToUpper() == NBTicketStatusConstants.APPROVED || order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
+                    {
+                        string statusString = order.Status.ToUpper() == NBTicketStatusConstants.REJECTED ? "Rejected" : "Approved";
+
+                        adminOrRejectedCommentsInformation.AppendLine($"{statusString} & Comments");
+                        adminOrRejectedCommentsInformation.AppendLine($"{adminComments.DisplayName} on {adminComments.Date}");
+
+                        if (order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
+                        {
+                            adminOrRejectedCommentsInformation.AppendLine($"Reason: {adminComments.Comment}");
+                        }
+                        else if (order.Status.ToUpper() == NBTicketStatusConstants.APPROVED)
+                        {
+                            adminOrRejectedCommentsInformation.AppendLine("Reason: Approved");
+                        }
+                        else
+                        {
+                            adminOrRejectedCommentsInformation.AppendLine();
+                        }
+                    }
+                    else
+                    {
+                        adminOrRejectedCommentsInformation.AppendLine(string.Empty);
+                    }
+                }
+
+                // Order management information.
                 StringBuilder orderManagementInformation = new StringBuilder();
                 List<ItemDetail> ItemDetails = order.ItemDetails != null ? JsonConvert.DeserializeObject<List<ItemDetail>>(order.ItemDetails) : new List<ItemDetail>();
                 List<ItemComment> ItemComments = order.ItemComments != null ? JsonConvert.DeserializeObject<List<ItemComment>>(order.ItemComments) : new List<ItemComment>();
@@ -237,40 +270,8 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                     orderManagementInformation.AppendLine($"Reason & Comments");
                     orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString());
                     orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Comments?.ToString());
-
-                    if (order.AdminComments != null)
-                    {
-                        AdminComments adminComments = JsonConvert.DeserializeObject<AdminComments>(order.AdminComments);
-
-                        if (order.Status.ToUpper() == NBTicketStatusConstants.APPROVED || order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
-                        {
-                            string statusString = order.Status.ToUpper() == NBTicketStatusConstants.REJECTED ? "Rejected" : "Approved";
-
-                            orderManagementInformation.AppendLine($"{statusString} & Comments");
-                            orderManagementInformation.AppendLine($"{adminComments.DisplayName} on {adminComments.Date}");
-
-                            if (order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
-                            {
-                                orderManagementInformation.AppendLine($"Reason: {adminComments.Comment}");
-                            }
-                            else if(order.Status.ToUpper() == NBTicketStatusConstants.APPROVED)
-                            {
-                                orderManagementInformation.AppendLine("Reason: Approved");
-                            }
-                            else
-                            {
-                                orderManagementInformation.AppendLine();
-                            }
-                        }
-                        else
-                        {
-                            orderManagementInformation.AppendLine(string.Empty);
-                        }
-                    }
-
-
                     orderManagementInformation.AppendLine();
-                }
+                }               
 
                 var descriptionOrComment = $"Order ID: {OrderID}\n" +
                    $"Status: {order.Status}\n" +
@@ -280,6 +281,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                    $"Requested Date: {RequestedDate}\n" +
                    $"Submitted By: {SubmittedBy}\n" +
                    $"Request Type: {RequestType}\n" +
+                   adminOrRejectedCommentsInformation +
                    $"Product Details: {orderManagementInformation}\n";
 
 
