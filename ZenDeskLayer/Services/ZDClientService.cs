@@ -238,11 +238,11 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
 
                         if (order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
                         {
-                            adminOrRejectedCommentsInformation.AppendLine($"Reason: {adminComments.Comment}");
+                            adminOrRejectedCommentsInformation.AppendLine($"Rejection Reason: {adminComments.Comment}");
                         }
                         else if (order.Status.ToUpper() == NBTicketStatusConstants.APPROVED)
                         {
-                            adminOrRejectedCommentsInformation.AppendLine("Reason: Approved");
+                            adminOrRejectedCommentsInformation.AppendLine($"Approval Reason: Approved");
                         }
                         else
                         {
