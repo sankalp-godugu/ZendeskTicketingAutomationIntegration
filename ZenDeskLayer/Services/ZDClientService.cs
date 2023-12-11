@@ -249,13 +249,17 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                             orderManagementInformation.AppendLine($"{statusString} & Comments");
                             orderManagementInformation.AppendLine($"{adminComments.DisplayName} on {adminComments.Date}");
 
-                            if (order.Status == NBTicketStatusConstants.REJECTED)
+                            if (order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
                             {
                                 orderManagementInformation.AppendLine($"Reason: {adminComments.Comment}");
                             }
-                            else
+                            else if(order.Status.ToUpper() == NBTicketStatusConstants.APPROVED)
                             {
                                 orderManagementInformation.AppendLine("Reason: Approved");
+                            }
+                            else
+                            {
+                                orderManagementInformation.AppendLine();
                             }
                         }
                         else
