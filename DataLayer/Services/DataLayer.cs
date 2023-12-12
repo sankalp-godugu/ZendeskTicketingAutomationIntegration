@@ -69,10 +69,11 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <param name="procedureName">Procedure name.</param>
         /// <param name="caseTicketId">Case ticket id</param>
         /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
+        /// <param name="currentProcessId">Current process id.</param>
         /// <param name="logger">Logger</param>
         /// <param name="connectionString">Connection string.</param>
         /// <returns>Returns the collection of objects.</returns>
-        public async Task<int> ExecuteNonQueryForCaseManagement(string procedureName, long? caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger)
+        public async Task<int> ExecuteNonQueryForCaseManagement(string procedureName, long? caseTicketId, long zenDeskTicketId, long currentProcessId, string connectionString, ILogger logger)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
@@ -85,6 +86,7 @@ namespace ZenDeskAutomation.DataLayer.Services
                     // Input parameters
                     command.Parameters.AddWithValue("@caseTicketId", caseTicketId);
                     command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
+                    command.Parameters.AddWithValue("@IsProcessed", currentProcessId);
 
                     // Output parameter
                     SqlParameter resultParameter = new SqlParameter("@Result", SqlDbType.Int)

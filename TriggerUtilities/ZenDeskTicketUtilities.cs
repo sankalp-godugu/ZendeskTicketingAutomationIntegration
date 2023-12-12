@@ -60,22 +60,27 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                         {
                             _logger?.LogInformation($"Started updating ticket via zendesk API for the case management ticket id: {caseManagementTicket?.CaseTicketID} for NHMemberID {caseManagementTicket?.NHMemberID} with details {caseManagementTicket}");
 
+                            await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, Convert.ToInt64(caseManagementTicket?.ZendeskTicket), 2, _dataLayer);
+
                             var ticketNumberReference = await _zdClientService?.UpdateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
-                            await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference, _dataLayer);
+                            await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference, ticketNumberReference == 0 ? 0 : 1, _dataLayer);
 
                         }
                         else
                         {
                             _logger?.LogInformation($"Started creating ticket via zendesk API for the case management ticket id: {caseManagementTicket.CaseTicketID}  for NHMemberID {caseManagementTicket?.NHMemberID} with details {caseManagementTicket}");
 
+                            await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, 0, 2, _dataLayer);
+
                             var ticketNumberReference = await _zdClientService.CreateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
-                            await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference, _dataLayer);
+                            await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, ticketNumberReference,
+                                ticketNumberReference == 0 ? 0 : 1, _dataLayer);
                         }
                     }
 
@@ -187,12 +192,13 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         /// <param name="_logger">Logger.</param>
         /// <param name="brConnectionString">BR connection string.</param>
         /// <param name="caseManagementTicket">Case management ticket.</param>
+        /// <param name="currentProcessId">Current process identifier.</param>
         /// <param name="ticketNumberReference">Ticket number reference.</param>
-        private static async Task UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(ILogger _logger, string brConnectionString, CaseTickets caseManagementTicket, long ticketNumberReference, IDataLayer _dataLayer)
+        private static async Task UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(ILogger _logger, string brConnectionString, CaseTickets caseManagementTicket, long ticketNumberReference, long currentProcessId, IDataLayer _dataLayer)
         {
             _logger?.LogInformation($"Updating zendesk ticket details with caseticket id :{caseManagementTicket?.ZendeskTicket}");
 
-            var result = await _dataLayer.ExecuteNonQueryForCaseManagement(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, brConnectionString, _logger);
+            var result = await _dataLayer.ExecuteNonQueryForCaseManagement(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, currentProcessId, brConnectionString, _logger);
 
             if (result == 1)
             {

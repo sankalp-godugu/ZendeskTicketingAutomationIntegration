@@ -25,10 +25,11 @@ namespace ZenDeskAutomation.DataLayer.Interfaces
         /// <param name="procedureName">Procedure name.</param>
         /// <param name="caseTicketId">Case ticket id</param>
         /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
+        /// <param name="currentProcessId">Current process id.</param>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="logger">Logger</param>
         /// <returns>Returns the collection of objects.</returns>
-        Task<int> ExecuteNonQueryForCaseManagement(string procedureName, long? caseTicketId, long zenDeskTicketId, string connectionString, ILogger logger);
+        Task<int> ExecuteNonQueryForCaseManagement(string procedureName, long? caseTicketId, long zenDeskTicketId, long currentProcessId, string connectionString, ILogger logger);
 
         /// <summary>
         /// Inserts the data into the table.
