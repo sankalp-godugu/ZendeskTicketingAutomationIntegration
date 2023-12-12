@@ -18,7 +18,7 @@
         /// <summary>
         /// InReview
         /// </summary>
-        public const string InReview = "InReview";
+        public const string InReview = "In Review";
 
         /// <summary>
         /// Failed
@@ -28,7 +28,7 @@
         /// <summary>
         /// ClosedPartially
         /// </summary>
-        public const string ClosedPartially = "ClosedPartially";
+        public const string ClosedPartially = "Closed Partially";
 
         /// <summary>
         /// Reviewed
@@ -38,12 +38,12 @@
         /// <summary>
         /// ClosedApproved
         /// </summary>
-        public const string ClosedApproved = "ClosedApproved";
+        public const string ClosedApproved = "Closed Approved";
 
         /// <summary>
         /// ClosedDeclined
         /// </summary>
-        public const string ClosedDeclined = "ClosedDeclined";
+        public const string ClosedDeclined = "Closed Declined";
 
         /// <summary>
         /// Pending Processing

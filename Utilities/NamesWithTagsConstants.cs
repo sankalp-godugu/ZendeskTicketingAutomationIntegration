@@ -23,15 +23,15 @@ namespace ZenDeskTicketProcessJob.Utilities
             {
                 { ZenDeskTicketStatusConstants.New, configuration["TicketStatuses:New"] },
                 { ZenDeskTicketStatusConstants.Reviewed, configuration["TicketStatuses:Reviewed"] },
-                { ZenDeskTicketStatusConstants.ClosedPartially, configuration["TicketStatuses:ClosedPartially"] },
-                { ZenDeskTicketStatusConstants.InReview, configuration["TicketStatuses:InReview"] },
-                { ZenDeskTicketStatusConstants.PendingProcessing, configuration["TicketStatuses:PendingProcessing"] },
+                { ZenDeskTicketStatusConstants.ClosedPartially, configuration["TicketStatuses:Closed Partially"] },
+                { ZenDeskTicketStatusConstants.InReview, configuration["TicketStatuses:In Review"] },
+                { ZenDeskTicketStatusConstants.PendingProcessing, configuration["TicketStatuses:Pending Processing"] },
                 { ZenDeskTicketStatusConstants.Pending, configuration["TicketStatuses:Pending"] },
                 { ZenDeskTicketStatusConstants.Closed,configuration["TicketStatuses:Closed"]  },
                 { ZenDeskTicketStatusConstants.Solved, configuration["TicketStatuses:Solved"] },
                 { ZenDeskTicketStatusConstants.Failed,configuration["TicketStatuses:Failed"]  },
-                { ZenDeskTicketStatusConstants.ClosedApproved, configuration["TicketStatuses:ClosedApproved"]  },
-                { ZenDeskTicketStatusConstants.ClosedDeclined, configuration["TicketStatuses:ClosedDeclined"]  }
+                { ZenDeskTicketStatusConstants.ClosedApproved, configuration["TicketStatuses:Closed Approved"]  },
+                { ZenDeskTicketStatusConstants.ClosedDeclined, configuration["TicketStatuses:Closed Declined"]  }
             };
         }
 

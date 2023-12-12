@@ -144,7 +144,7 @@ namespace ZenDeskAutomation
         /// </summary>
         /// <param name="myTimer">My timer.</param>
         [FunctionName("CMTAzureTimerFunction")]
-        public void Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer, ILogger logger)
+        public void Run([TimerTrigger("*/5 * * * * *")] TimerInfo myTimer, ILogger logger)
         {
             //if (_configuration.GetValue("IsCMTJobEnabled", true))
             //{
