@@ -138,26 +138,31 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                         if (orderChangeRequest != null)
                         {
+
                             if (!string.IsNullOrWhiteSpace(orderChangeRequest?.TicketId) && Convert.ToInt64(orderChangeRequest?.TicketId) > 0)
                             {
                                 _logger?.LogInformation($"Started updating ticket via zendesk API for the admin ticket id: {orderChangeRequest.TicketId} for NHMemberID {orderChangeRequest?.NHMemberId} with details {orderChangeRequest}");
+
+                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, Convert.ToInt64(orderChangeRequest?.TicketId), 2, _dataLayer);
 
                                 var ticketNumberReference = await _zdClientService?.UpdateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
 
                                 _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
 
-                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, _dataLayer);
+                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, ticketNumberReference == 0 ? 0 : 1, _dataLayer);
 
                             }
                             else
                             {
                                 _logger?.LogInformation($"Started creating ticket via zendesk API for the order change request id: {orderChangeRequest.OrderChangeRequestId}  for NHMemberID {orderChangeRequest?.NHMemberId} with details {orderChangeRequest}");
 
+                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, 0, 2, _dataLayer);
+
                                 var ticketNumberReference = await _zdClientService.CreateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
 
                                 _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
 
-                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, _dataLayer);
+                                await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, ticketNumberReference, ticketNumberReference == 0 ? 0 : 1, _dataLayer);
                             }
                         }
                     }
@@ -207,19 +212,39 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         /// <param name="brConnectionString">BR connection string.</param>
         /// <param name="order">Order.</param>
         /// <param name="ticketNumberReference">Ticket number reference.</param>
-        private static async Task UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(ILogger _logger, string brConnectionString, Order order, long ticketNumberReference, IDataLayer _dataLayer)
+        /// <param name="currentProcessStatus">
+        /// Current process status.
+        /// 0 - Not Processed.
+        /// 1 - Processed.
+        /// 2 - ZenDesk Processing.
+        /// </param>
+        private static async Task UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(ILogger _logger, string brConnectionString, Order order, long ticketNumberReference, long currentProcessStatus, IDataLayer _dataLayer)
         {
             _logger?.LogInformation($"Updating zendesk ticket details with id :{order?.TicketId}");
 
-            var result = await _dataLayer.ExecuteNonQueryForAdminPortal(SQLConstants.UpdateZenDeskReferenceForOTCRefundOrReshipOrders, order.OrderChangeRequestId, ticketNumberReference, brConnectionString, _logger);
+            var result = await _dataLayer.ExecuteNonQueryForAdminPortal(SQLConstants.UpdateZenDeskReferenceForOTCRefundOrReshipOrders, order.OrderChangeRequestId, ticketNumberReference, currentProcessStatus, brConnectionString, _logger);
 
             if (result == 1)
             {
-                _logger?.LogInformation($"Updated the zendesk ticket number reference id: {ticketNumberReference} for change request id: {order?.OrderChangeRequestId}.");
+                if (currentProcessStatus == 2)
+                {
+                    _logger?.LogInformation($"Updating IsProcessed of order change request id {order?.OrderChangeRequestId} to status(2) which says currently it is sending to zendesk for zendesk processing.");
+                }
+                else
+                {
+                    _logger?.LogInformation($"Updated the zendesk ticket number reference id: {ticketNumberReference} for change request id: {order?.OrderChangeRequestId}.");
+                }
             }
             else
             {
-                _logger?.LogInformation($"Failed to update the zendesk ticker number reference id: {ticketNumberReference} for change request id: {order?.OrderChangeRequestId}.");
+                if (currentProcessStatus == 2)
+                {
+                    _logger?.LogInformation($"Failed to update the IsProcessed of order change request id {order?.OrderChangeRequestId} to status(2) which says currently it is sending to zendesk for zendesk processing.");
+                }
+                else
+                {
+                    _logger?.LogInformation($"Failed to update the zendesk ticker number reference id: {ticketNumberReference} for change request id: {order?.OrderChangeRequestId}.");
+                }
             }
         }
     }

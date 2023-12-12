@@ -125,10 +125,11 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <param name="procedureName">Procedure name.</param>
         /// <param name="orderChangeRequestId">orderChangeRequestId</param>
         /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
+        /// <param name="currentProcessStatus">Current process status.</param>
         /// <param name="logger">Logger</param>
         /// <param name="connectionString">Connection string.</param>
         /// <returns>Returns the collection of objects.</returns>
-        public async Task<int> ExecuteNonQueryForAdminPortal(string procedureName, long? orderChangeRequestId, long zenDeskTicketId, string connectionString, ILogger logger)
+        public async Task<int> ExecuteNonQueryForAdminPortal(string procedureName, long? orderChangeRequestId, long zenDeskTicketId, long currentProcessStatus, string connectionString, ILogger logger)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
@@ -141,6 +142,7 @@ namespace ZenDeskAutomation.DataLayer.Services
                     // Input parameters
                     command.Parameters.AddWithValue("@OrderChangeRequestID", orderChangeRequestId);
                     command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
+                    command.Parameters.AddWithValue("@IsProcessed", currentProcessStatus);
 
                     // Output parameter
                     SqlParameter resultParameter = new SqlParameter("@Result", SqlDbType.Int)
