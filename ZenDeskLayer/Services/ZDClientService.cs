@@ -168,7 +168,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                             new { id = _configuration["NH/EHID"], value = caseTicket?.NHMemberID },
                             new { id = _configuration["MemberName"], value = caseTicket?.MemberName },
                             new { id = _configuration["CarrierName-FromNBDb"], value = carrierTag },
-                            new { id = _configuration["Assignee"], value = caseTicket.AssignedTo },
+                            //new { id = _configuration["Assignee"], value = caseTicket.AssignedTo },
                             new { id = _configuration["PlanName"], value = caseTicket?.HealthPlanName },
                         },
                         email_ccs = new[]
