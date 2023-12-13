@@ -531,6 +531,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             return $"Case ID#: {caseID}\n" +
                    $"Created By: {createdBy}\n" +
                    $"Created On: {createdOn}\n" +
+                   $"Assigned To: {caseTickets?.AssignedTo}\n" +
                    $"Issue Genre: {issueGenre}\n" +
                    $"Issue Type: {issueType}\n" +
                    $"Issue Topic: {issueTopic}\n" +

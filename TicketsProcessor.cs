@@ -146,14 +146,14 @@ namespace ZenDeskAutomation
         [FunctionName("CMTAzureTimerFunction")]
         public void Run([TimerTrigger("*/3 * * * * *")] TimerInfo myTimer, ILogger logger)
         {
-            //if (_configuration.GetValue("IsCMTJobEnabled", true))
-            //{
+            if (_configuration.GetValue("IsCMTJobEnabled", true))
+            {
                 ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
-            //}
-            //else
-            //{
-            //    logger.LogInformation("Processing is disabled. Skipping execution.");
-            //}
+            }
+            else
+            {
+                logger.LogInformation("Processing is disabled. Skipping execution.");
+            }
         }
     }
 
@@ -191,14 +191,14 @@ namespace ZenDeskAutomation
         [FunctionName("AdminAzureTimerFunction")]
         public void Run([TimerTrigger("*/3 * * * * *")] TimerInfo myTimer, ILogger logger)
         {
-            //if (_configuration.GetValue("IsAdminJobEnabled", true))
-            //{
-                 ZenDeskTicketUtilities.ProcessAdminZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
-           // }
-            //else
-            //{
-               // logger.LogInformation("Processing is disabled. Skipping execution.");
-            //}
+            if (_configuration.GetValue("IsAdminJobEnabled", true))
+            {
+                ZenDeskTicketUtilities.ProcessAdminZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
+            }
+            else
+            {
+                logger.LogInformation("Processing is disabled. Skipping execution.");
+            }
         }
     }
 }
