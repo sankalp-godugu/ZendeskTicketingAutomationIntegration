@@ -47,17 +47,7 @@ namespace ZenDeskAutomation
 
             builder.Services.AddHttpClient();
 
-            builder.Services.AddApplicationInsightsTelemetry((options) =>
-            {
-                options.ConnectionString = Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING");
-            });
-
-            // Configure logging
-            builder.Services.AddLogging(loggingBuilder =>
-            {
-                // Add Application Insights logging
-                loggingBuilder.AddApplicationInsights();
-            });
+            builder.Services.AddApplicationInsightsTelemetry();
 
             builder.Services.AddSingleton<IDataLayer>((s) =>
             {
