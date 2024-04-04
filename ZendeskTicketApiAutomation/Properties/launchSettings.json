@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "ZenDeskAutomation": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7073"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "httpPort": 34590,
+      "useSSL": false
+    }
+  }
+}
