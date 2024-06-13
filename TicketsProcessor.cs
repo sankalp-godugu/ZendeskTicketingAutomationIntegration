@@ -144,7 +144,7 @@ namespace ZenDeskAutomation
         /// </summary>
         /// <param name="myTimer">My timer.</param>
         [FunctionName("CMTAzureTimerFunction")]
-        public void Run([TimerTrigger("*/3 * * * * *")] TimerInfo myTimer, ILogger logger)
+        public void Run([TimerTrigger("0 * * * * *")] TimerInfo myTimer, ILogger logger)
         {
             if (_configuration.GetValue("IsCMTJobEnabled", true))
             {
@@ -189,7 +189,7 @@ namespace ZenDeskAutomation
         /// </summary>
         /// <param name="myTimer">My timer.</param>
         [FunctionName("AdminAzureTimerFunction")]
-        public void Run([TimerTrigger("*/25 * * * * *")] TimerInfo myTimer, ILogger logger)
+        public void Run([TimerTrigger("0 * * * * *")] TimerInfo myTimer, ILogger logger)
         {
             if (_configuration.GetValue("IsAdminJobEnabled", true))
             {
