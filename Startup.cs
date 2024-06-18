@@ -1,19 +1,18 @@
-﻿using System;
-using System.Net.Http;
-using Azure.Identity;
-using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+﻿using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using ZenDeskAutomation.DataLayer.Interfaces;
-using ZenDeskAutomation.ZenDeskLayer.Interfaces;
-using ZenDeskAutomation.ZenDeskLayer.Services;
+using System;
+using System.Net.Http;
+using ZenDeskTicketProcessJob;
+using ZenDeskTicketProcessJob.DataLayer.Interfaces;
 using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
 using ZenDeskTicketProcessJob.SchemaTemplateLayer.Services;
 using ZenDeskTicketProcessJob.Utilities;
+using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
+using ZenDeskTicketProcessJob.ZenDeskLayer.Services;
 
-[assembly: FunctionsStartup(typeof(ZenDeskAutomation.Startup))]
-namespace ZenDeskAutomation
+[assembly: FunctionsStartup(typeof(Startup))]
+namespace ZenDeskTicketProcessJob
 {
     /// <summary>
     /// Startup.
@@ -26,7 +25,7 @@ namespace ZenDeskAutomation
         /// <param name="builder">Builder.</param>
         public override void ConfigureAppConfiguration(IFunctionsConfigurationBuilder builder)
         {
-            builder.ConfigurationBuilder
+            _ = builder.ConfigurationBuilder
                 .SetBasePath(Environment.CurrentDirectory)
                 .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
@@ -42,27 +41,27 @@ namespace ZenDeskAutomation
         {
 
             // Initialize constants
-            var configuration = builder.GetContext().Configuration;
+            IConfiguration configuration = builder.GetContext().Configuration;
             NamesWithTagsConstants.Initialize(configuration);
 
-            builder.Services.AddHttpClient();
+            _ = builder.Services.AddHttpClient();
 
-            builder.Services.AddApplicationInsightsTelemetry();
+            _ = builder.Services.AddApplicationInsightsTelemetry();
 
-            builder.Services.AddSingleton<IDataLayer>((s) =>
+            _ = builder.Services.AddSingleton<IDataLayer>((s) =>
             {
                 return new DataLayer.Services.DataLayer();
             });
 
-            builder.Services.AddTransient<IZDClientService, ZDClientService>((s) =>
+            _ = builder.Services.AddTransient<IZDClientService, ZDClientService>((s) =>
             {
-                var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
-                var configuration = s.GetRequiredService<IConfiguration>();
-                var schemaTemplateService = s.GetRequiredService<ISchemaTemplateService>();
+                IHttpClientFactory httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
+                IConfiguration configuration = s.GetRequiredService<IConfiguration>();
+                ISchemaTemplateService schemaTemplateService = s.GetRequiredService<ISchemaTemplateService>();
                 return new ZDClientService(httpClientFactory, configuration, schemaTemplateService);
             });
 
-            builder.Services.AddSingleton<ISchemaTemplateService>((s) =>
+            _ = builder.Services.AddSingleton<ISchemaTemplateService>((s) =>
             {
                 return new SchemaTemplateService();
             });

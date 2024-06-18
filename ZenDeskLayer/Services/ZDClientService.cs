@@ -1,22 +1,19 @@
-﻿using Microsoft.CodeAnalysis.Operations;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using ZenDeskAutomation.ZenDeskLayer.Interfaces;
 using ZenDeskTicketProcessJob.Models;
 using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
 using ZenDeskTicketProcessJob.Utilities;
+using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
 
-namespace ZenDeskAutomation.ZenDeskLayer.Services
+namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
 {
     /// <summary>
     /// Zendesk client service.
@@ -24,9 +21,9 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
     public class ZDClientService : IZDClientService
     {
         #region Private Fields
-        private IHttpClientFactory _httpClientFactory;
-        private IConfiguration _configuration;
-        private ISchemaTemplateService _schemaTemplateService;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
+        private readonly ISchemaTemplateService _schemaTemplateService;
         #endregion
 
         #region Constructor
@@ -152,7 +149,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
                 string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
 
-                var descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
+                string descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
 
                 // Create the dynamic object
                 var dynamicTicket = new
@@ -177,7 +174,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                         },
                         priority = "high",
                         requester = new { email = _configuration["Email"] },
-                        custom_status_id = (CaseTopicConstants.Reimbursement == caseTicket.CaseTopic || CaseTopicConstants.WalletTransfer == caseTicket.CaseTopic) ? NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus) : NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
+                        custom_status_id = caseTicket.CaseTopic is CaseTopicConstants.Reimbursement or CaseTopicConstants.WalletTransfer ? NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus) : NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
                         subject = zenDeskSubject,
                         ticket_form_id = _configuration["TicketFormValue"],
                         tags = new List<string>(),
@@ -189,7 +186,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
 
                 // Create StringContent from JSON payload
-                StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                StringContent content = new(jsonPayload, Encoding.UTF8, "application/json");
                 return content;
             }
             catch (Exception ex)
@@ -223,57 +220,50 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string RequestType = order?.RequestType ?? string.Empty;
 
                 // Admin or rejected comments information.
-                StringBuilder adminOrRejectedCommentsInformation = new StringBuilder();
+                StringBuilder adminOrRejectedCommentsInformation = new();
 
                 if (order.AdminComments != null)
                 {
                     AdminComments adminComments = JsonConvert.DeserializeObject<AdminComments>(order.AdminComments);
 
-                    if (order.Status.ToUpper() == NBTicketStatusConstants.APPROVED || order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
+                    if (order.Status.ToUpper() is NBTicketStatusConstants.APPROVED or NBTicketStatusConstants.REJECTED)
                     {
                         string statusString = order.Status.ToUpper() == NBTicketStatusConstants.REJECTED ? "Rejected" : "Approved";
 
-                        adminOrRejectedCommentsInformation.AppendLine($"{statusString} & Comments");
-                        adminOrRejectedCommentsInformation.AppendLine($"{adminComments.DisplayName} on {adminComments.Date}");
+                        _ = adminOrRejectedCommentsInformation.AppendLine($"{statusString} & Comments");
+                        _ = adminOrRejectedCommentsInformation.AppendLine($"{adminComments.DisplayName} on {adminComments.Date}");
 
-                        if (order.Status.ToUpper() == NBTicketStatusConstants.REJECTED)
-                        {
-                            adminOrRejectedCommentsInformation.AppendLine($"Rejection Reason: {adminComments.Comment}");
-                        }
-                        else if (order.Status.ToUpper() == NBTicketStatusConstants.APPROVED)
-                        {
-                            adminOrRejectedCommentsInformation.AppendLine($"Approval Reason: Approved");
-                        }
-                        else
-                        {
-                            adminOrRejectedCommentsInformation.AppendLine();
-                        }
+                        _ = order.Status.ToUpper() == NBTicketStatusConstants.REJECTED
+                            ? adminOrRejectedCommentsInformation.AppendLine($"Rejection Reason: {adminComments.Comment}")
+                            : order.Status.ToUpper() == NBTicketStatusConstants.APPROVED
+                                ? adminOrRejectedCommentsInformation.AppendLine($"Approval Reason: Approved")
+                                : adminOrRejectedCommentsInformation.AppendLine();
                     }
                     else
                     {
-                        adminOrRejectedCommentsInformation.AppendLine(string.Empty);
+                        _ = adminOrRejectedCommentsInformation.AppendLine(string.Empty);
                     }
                 }
 
                 // Order management information.
-                StringBuilder orderManagementInformation = new StringBuilder();
+                StringBuilder orderManagementInformation = new();
                 List<ItemDetail> ItemDetails = order.ItemDetails != null ? JsonConvert.DeserializeObject<List<ItemDetail>>(order.ItemDetails) : new List<ItemDetail>();
                 List<ItemComment> ItemComments = order.ItemComments != null ? JsonConvert.DeserializeObject<List<ItemComment>>(order.ItemComments) : new List<ItemComment>();
 
-                foreach (var itemDetail in ItemDetails)
+                foreach (ItemDetail itemDetail in ItemDetails)
                 {
-                    orderManagementInformation.AppendLine();
-                    orderManagementInformation.AppendLine($"Item Name: {itemDetail?.ItemName}");
-                    orderManagementInformation.AppendLine($"Units: {itemDetail?.Quantity}");
-                    orderManagementInformation.AppendLine($"Unit Price: {itemDetail?.UnitPrice}");
-                    orderManagementInformation.AppendLine($"Total Price: {itemDetail?.TotalPrice}");
-                    orderManagementInformation.AppendLine($"Reason & Comments");
-                    orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString());
-                    orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Comments?.ToString());
-                    orderManagementInformation.AppendLine();
-                }               
+                    _ = orderManagementInformation.AppendLine();
+                    _ = orderManagementInformation.AppendLine($"Item Name: {itemDetail?.ItemName}");
+                    _ = orderManagementInformation.AppendLine($"Units: {itemDetail?.Quantity}");
+                    _ = orderManagementInformation.AppendLine($"Unit Price: {itemDetail?.UnitPrice}");
+                    _ = orderManagementInformation.AppendLine($"Total Price: {itemDetail?.TotalPrice}");
+                    _ = orderManagementInformation.AppendLine($"Reason & Comments");
+                    _ = orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Reason?.ToString());
+                    _ = orderManagementInformation.AppendLine(ItemComments.FirstOrDefault(ic => ic.OrderItemId == itemDetail.OrderItemId)?.Comments?.ToString());
+                    _ = orderManagementInformation.AppendLine();
+                }
 
-                var descriptionOrComment = $"Order ID: {OrderID}\n" +
+                string descriptionOrComment = $"Order ID: {OrderID}\n" +
                    $"Status: {order.Status}\n" +
                    $"Carrier Name: {CarrierName}\n" +
                    $"NHMemberID: {NHMemberID}\n" +
@@ -318,7 +308,7 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
                 string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
 
                 // Create StringContent from JSON payload
-                StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                StringContent content = new(jsonPayload, Encoding.UTF8, "application/json");
                 return content;
             }
             catch (Exception ex)
@@ -337,16 +327,12 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         {
             string uppercasedStatus = status?.ToUpper() ?? string.Empty;
 
-            switch (uppercasedStatus)
+            return uppercasedStatus switch
             {
-                case NBTicketStatusConstants.PENDING:
-                    return NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.New);
-                case NBTicketStatusConstants.APPROVED:
-                case NBTicketStatusConstants.REJECTED:
-                    return NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.Closed);
-                default:
-                    return string.Empty;
-            }
+                NBTicketStatusConstants.PENDING => NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.New),
+                NBTicketStatusConstants.APPROVED or NBTicketStatusConstants.REJECTED => NamesWithTagsConstants.GetTagValueByTicketStatus(ZenDeskTicketStatusConstants.Closed),
+                _ => string.Empty,
+            };
         }
 
 
@@ -358,71 +344,30 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         /// <returns>Returns the ticket description from the case topic.</returns>
         private string GetTicketDescriptionFromCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
-            switch (caseTickets?.CaseTopic)
+            return (caseTickets?.CaseTopic) switch
             {
-                case CaseTopicConstants.ItemRelatedIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.ShipmentRelatedIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.HearingAidIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.ProviderIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.BillingIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.UserAgreementsNotReceived:
-                    return "Description for User Agreements (Not received)";
-
-                case CaseTopicConstants.WrongItemReceived:
-                    return "Description for Wrong Item received";
-
-                case CaseTopicConstants.DeviceIssue:
-                    return "Description for Device Issue";
-
-                case CaseTopicConstants.BalanceNotLoaded:
-                    return "Description for Balance not loaded";
-
-                case CaseTopicConstants.WrongWalletCharged:
-                    return "Description for Wrong wallet charged";
-
-                case CaseTopicConstants.TransactionDeclined:
-                    return "Description for Transaction declined";
-
-                case CaseTopicConstants.Others:
-                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.Reimbursement:
-                    return _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.WalletTransfer:
-                    return _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.CardReplacement:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.CardholderAddressUpdate:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.ChangeCardStatus:
-                    return _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.RequestVoucher:
-                    return "Description for Request Voucher";
-
-                case CaseTopicConstants.CardDeclined:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.FlexIssue:
-                    return _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets, logger);
-
-                default:
-                    return "Unknown Case Topic";
-            }
+                CaseTopicConstants.ItemRelatedIssues => _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets, logger),
+                CaseTopicConstants.ShipmentRelatedIssues => _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets, logger),
+                CaseTopicConstants.HearingAidIssues => _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger),
+                CaseTopicConstants.ProviderIssues => _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets, logger),
+                CaseTopicConstants.BillingIssues => _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets, logger),
+                CaseTopicConstants.UserAgreementsNotReceived => "Description for User Agreements (Not received)",
+                CaseTopicConstants.WrongItemReceived => "Description for Wrong Item received",
+                CaseTopicConstants.DeviceIssue => "Description for Device Issue",
+                CaseTopicConstants.BalanceNotLoaded => "Description for Balance not loaded",
+                CaseTopicConstants.WrongWalletCharged => "Description for Wrong wallet charged",
+                CaseTopicConstants.TransactionDeclined => "Description for Transaction declined",
+                CaseTopicConstants.Others => _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger),
+                CaseTopicConstants.Reimbursement => _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets, logger),
+                CaseTopicConstants.WalletTransfer => _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets, logger),
+                CaseTopicConstants.CardReplacement => _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets, logger),
+                CaseTopicConstants.CardholderAddressUpdate => _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets, logger),
+                CaseTopicConstants.ChangeCardStatus => _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets, logger),
+                CaseTopicConstants.RequestVoucher => "Description for Request Voucher",
+                CaseTopicConstants.CardDeclined => _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets, logger),
+                CaseTopicConstants.FlexIssue => _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets, logger),
+                _ => "Unknown Case Topic",
+            };
         }
 
         /// <summary>
@@ -437,32 +382,30 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
             if (content != null)
             {
                 // HttpClient
-                using (HttpClient httpClient = GetZenDeskHttpClient())
+                using HttpClient httpClient = GetZenDeskHttpClient();
+
+                // Make the API request
+                HttpResponseMessage response = await httpClient.PutAsync(_configuration["ZenDesk:ApiEndPoints:UpdateTicket"] + zendeskTicketId, content);
+
+                // Check if the request was successful
+                if (response.IsSuccessStatusCode)
                 {
+                    // Read and deserialize the response content
+                    string responseContent = await response?.Content?.ReadAsStringAsync();
 
-                    // Make the API request
-                    HttpResponseMessage response = await httpClient.PutAsync(_configuration["ZenDesk:ApiEndPoints:UpdateTicket"] + zendeskTicketId, content);
+                    // Deserialize the JSON string
+                    JObject jsonResponse = JObject.Parse(responseContent);
 
-                    // Check if the request was successful
-                    if (response.IsSuccessStatusCode)
-                    {
-                        // Read and deserialize the response content
-                        string responseContent = await response?.Content?.ReadAsStringAsync();
+                    // Get the value of a specific property
+                    long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
 
-                        // Deserialize the JSON string
-                        JObject jsonResponse = JObject.Parse(responseContent);
-
-                        // Get the value of a specific property
-                        long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
-
-                        // Return the ticket identifier.
-                        return ticketIdentifier;
-                    }
-                    else
-                    {
-                        logger.LogError($"Failed to call the update zendesk API with response: {response}");
-                        return 0;
-                    }
+                    // Return the ticket identifier.
+                    return ticketIdentifier;
+                }
+                else
+                {
+                    logger.LogError($"Failed to call the update zendesk API with response: {response}");
+                    return 0;
                 }
             }
             else { return 0; }
@@ -477,31 +420,29 @@ namespace ZenDeskAutomation.ZenDeskLayer.Services
         private async Task<long> CreateZendeskTicketWithPassedInformation(ILogger logger, StringContent content)
         {
             // Gets the zendesk http client.
-            using (HttpClient httpClient = GetZenDeskHttpClient())
+            using HttpClient httpClient = GetZenDeskHttpClient();
+            // Make the API request
+            HttpResponseMessage response = await httpClient.PostAsync(_configuration["ZenDesk:ApiEndPoints:CreateTicket"], content);
+
+            // Check if the request was successful
+            if (response.IsSuccessStatusCode)
             {
-                // Make the API request
-                HttpResponseMessage response = await httpClient.PostAsync(_configuration["ZenDesk:ApiEndPoints:CreateTicket"], content);
+                // Read and deserialize the response content
+                string responseContent = await response.Content.ReadAsStringAsync();
 
-                // Check if the request was successful
-                if (response.IsSuccessStatusCode)
-                {
-                    // Read and deserialize the response content
-                    string responseContent = await response.Content.ReadAsStringAsync();
+                // Deserialize the JSON string
+                JObject jsonResponse = JObject.Parse(responseContent);
 
-                    // Deserialize the JSON string
-                    JObject jsonResponse = JObject.Parse(responseContent);
+                // Get the value of a specific property
+                long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
 
-                    // Get the value of a specific property
-                    long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
-
-                    // Return the deserialized response
-                    return ticketIdentifier;
-                }
-                else
-                {
-                    logger.LogError($"Failed to call the create zendesk API with response: {response}");
-                    return 0;
-                }
+                // Return the deserialized response
+                return ticketIdentifier;
+            }
+            else
+            {
+                logger.LogError($"Failed to call the create zendesk API with response: {response}");
+                return 0;
             }
         }
 

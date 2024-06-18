@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 
 namespace ZenDeskTicketProcessJob.Utilities
 {
@@ -9,14 +8,9 @@ namespace ZenDeskTicketProcessJob.Utilities
         {
             if (!string.IsNullOrEmpty(date))
             {
-                DateTime newDate;
-                if (DateTime.TryParse(date, out newDate))
+                if (DateTime.TryParse(date, out DateTime newDate))
                 {
-                    if (newDate.Year < 1900)
-                    {
-                        return "N/A";
-                    }
-                    return GetDateString(newDate);
+                    return newDate.Year < 1900 ? "N/A" : GetDateString(newDate);
                 }
             }
             return string.Empty;

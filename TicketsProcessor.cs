@@ -1,5 +1,3 @@
-using System;
-using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -9,13 +7,13 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using ZenDeskAutomation.DataLayer.Interfaces;
-using ZenDeskAutomation.DataLayer.Services;
-using ZenDeskAutomation.ZenDeskLayer.Interfaces;
-using ZenDeskAutomation.ZenDeskLayer.Services;
+using System;
+using System.Net;
+using ZenDeskTicketProcessJob.DataLayer.Interfaces;
 using ZenDeskTicketProcessJob.TriggerUtilities;
+using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
 
-namespace ZenDeskAutomation
+namespace ZenDeskTicketProcessJob
 {
     /// <summary>
     /// Azure http function for processing all the tickets of card and grievance requests of date greater than specified in keyvault.
@@ -148,7 +146,7 @@ namespace ZenDeskAutomation
         {
             if (_configuration.GetValue("IsCMTJobEnabled", true))
             {
-                ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
+                _ = ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
             }
             else
             {
@@ -193,7 +191,7 @@ namespace ZenDeskAutomation
         {
             if (_configuration.GetValue("IsAdminJobEnabled", true))
             {
-                ZenDeskTicketUtilities.ProcessAdminZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
+                _ = ZenDeskTicketUtilities.ProcessAdminZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
             }
             else
             {

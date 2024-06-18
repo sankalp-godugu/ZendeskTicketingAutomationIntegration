@@ -1,6 +1,4 @@
-﻿using ZenDeskTicketProcessJob.Models.ZenDeskTicketProcessJob.Models;
-
-namespace ZenDeskAutomation.Utilities
+﻿namespace ZenDeskTicketProcessJob.Utilities
 {
     /// <summary>
     /// SQL constants.
@@ -10,13 +8,13 @@ namespace ZenDeskAutomation.Utilities
         /// <summary>
         /// Get OBT Benfit details.
         /// </summary>
-        public static string GetAllCaseTicketsForAllMembers = 
+        public static string GetAllCaseTicketsForAllMembers =
             "[ServiceRequest].[GetAllCaseTicketsForAllMembers]";
 
         /// <summary>
         /// Updates the zendesk reference for member case tickets.
         /// </summary>
-        public static string UpdateZenDeskReferenceForMemberCaseTickets  = "ServiceRequest.UpdateZenDeskReferenceForMemberCaseTickets";
+        public static string UpdateZenDeskReferenceForMemberCaseTickets = "ServiceRequest.UpdateZenDeskReferenceForMemberCaseTickets";
 
         /// <summary>
         /// Gets the order change requests for zendesk integration.

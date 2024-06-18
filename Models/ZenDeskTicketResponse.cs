@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ZenDeskAutomation.Models
+namespace ZenDeskTicketProcessJob.Models
 {
     public class ZenDeskTicketResponse
     {

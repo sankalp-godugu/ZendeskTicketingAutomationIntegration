@@ -3,13 +3,12 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using Dapper;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using ZenDeskAutomation.DataLayer.Interfaces;
+using ZenDeskTicketProcessJob.DataLayer.Interfaces;
 
-namespace ZenDeskAutomation.DataLayer.Services
+namespace ZenDeskTicketProcessJob.DataLayer.Services
 {
     /// <summary>
     /// Data Layer.
@@ -27,27 +26,25 @@ namespace ZenDeskAutomation.DataLayer.Services
         public async Task<List<T>> ExecuteReader<T>(string procedureName, Dictionary<string, object> parameters, string connectionString, ILogger logger)
         {
             logger.LogInformation($"Started calling stored procedure {procedureName} with parameters: {string.Join(", ", parameters.Select(p => $"{p.Key} = {p.Value}"))}");
-            List<T> list = new List<T>();
-            using (SqlConnection sqlConnection = new SqlConnection(connectionString))
+            List<T> list = new();
+            using (SqlConnection sqlConnection = new(connectionString))
             {
                 await sqlConnection.OpenAsync();
                 try
                 {
-                    using (SqlCommand sqlCommand = new SqlCommand())
+                    using SqlCommand sqlCommand = new();
+                    sqlCommand.CommandTimeout = GetSqlCommandTimeout(logger);
+                    sqlCommand.Connection = sqlConnection;
+                    sqlCommand.CommandType = CommandType.StoredProcedure;
+                    sqlCommand.CommandText = procedureName;
+
+                    if (parameters.Count > 0)
                     {
-                        sqlCommand.CommandTimeout = GetSqlCommandTimeout(logger);
-                        sqlCommand.Connection = sqlConnection;
-                        sqlCommand.CommandType = CommandType.StoredProcedure;
-                        sqlCommand.CommandText = procedureName;
-
-                        if (parameters.Count > 0)
-                        {
-                            sqlCommand.Parameters.AddRange(GetSqlParameters(parameters).ToArray());
-                        }
-                        var dataReader = await sqlCommand.ExecuteReaderAsync();
-
-                        list = DataReaderMapToList<T>(dataReader, logger);
+                        sqlCommand.Parameters.AddRange(GetSqlParameters(parameters).ToArray());
                     }
+                    SqlDataReader dataReader = await sqlCommand.ExecuteReaderAsync();
+
+                    list = DataReaderMapToList<T>(dataReader, logger);
                 }
                 catch (Exception ex)
                 {
@@ -75,48 +72,44 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <returns>Returns the collection of objects.</returns>
         public async Task<int> ExecuteNonQueryForCaseManagement(string procedureName, long? caseTicketId, long zenDeskTicketId, long currentProcessId, string connectionString, ILogger logger)
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using SqlConnection connection = new(connectionString);
+            await connection.OpenAsync();
+
+            using SqlCommand command = new(procedureName, connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            // Input parameters
+            _ = command.Parameters.AddWithValue("@caseTicketId", caseTicketId);
+            _ = command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
+            _ = command.Parameters.AddWithValue("@IsProcessed", currentProcessId);
+
+            // Output parameter
+            SqlParameter resultParameter = new("@Result", SqlDbType.Int)
             {
-                await connection.OpenAsync();
+                Direction = ParameterDirection.Output
+            };
+            _ = command.Parameters.Add(resultParameter);
 
-                using (SqlCommand command = new SqlCommand(procedureName, connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
+            try
+            {
+                _ = await command.ExecuteNonQueryAsync();
 
-                    // Input parameters
-                    command.Parameters.AddWithValue("@caseTicketId", caseTicketId);
-                    command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
-                    command.Parameters.AddWithValue("@IsProcessed", currentProcessId);
+                // Retrieve the result code
+                int result = (int)resultParameter.Value;
 
-                    // Output parameter
-                    SqlParameter resultParameter = new SqlParameter("@Result", SqlDbType.Int)
-                    {
-                        Direction = ParameterDirection.Output
-                    };
-                    command.Parameters.Add(resultParameter);
+                // Log the result
+                logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
 
-                    try
-                    {
-                        await command.ExecuteNonQueryAsync();
-
-                        // Retrieve the result code
-                        int result = (int)resultParameter.Value;
-
-                        // Log the result
-                        logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
-
-                        return result;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
-                        return -1;
-                    }
-                    finally
-                    {
-                        connection.Close();
-                    }
-                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
+                return -1;
+            }
+            finally
+            {
+                connection.Close();
             }
         }
 
@@ -133,48 +126,44 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <returns>Returns the collection of objects.</returns>
         public async Task<int> ExecuteNonQueryForAdminPortal(string procedureName, long? orderChangeRequestId, long zenDeskTicketId, long currentProcessStatus, string connectionString, ILogger logger)
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using SqlConnection connection = new(connectionString);
+            await connection.OpenAsync();
+
+            using SqlCommand command = new(procedureName, connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            // Input parameters
+            _ = command.Parameters.AddWithValue("@OrderChangeRequestID", orderChangeRequestId);
+            _ = command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
+            _ = command.Parameters.AddWithValue("@IsProcessed", currentProcessStatus);
+
+            // Output parameter
+            SqlParameter resultParameter = new("@Result", SqlDbType.Int)
             {
-                await connection.OpenAsync();
+                Direction = ParameterDirection.Output
+            };
+            _ = command.Parameters.Add(resultParameter);
 
-                using (SqlCommand command = new SqlCommand(procedureName, connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
+            try
+            {
+                _ = await command.ExecuteNonQueryAsync();
 
-                    // Input parameters
-                    command.Parameters.AddWithValue("@OrderChangeRequestID", orderChangeRequestId);
-                    command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
-                    command.Parameters.AddWithValue("@IsProcessed", currentProcessStatus);
+                // Retrieve the result code
+                int result = (int)resultParameter.Value;
 
-                    // Output parameter
-                    SqlParameter resultParameter = new SqlParameter("@Result", SqlDbType.Int)
-                    {
-                        Direction = ParameterDirection.Output
-                    };
-                    command.Parameters.Add(resultParameter);
+                // Log the result
+                logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
 
-                    try
-                    {
-                        await command.ExecuteNonQueryAsync();
-
-                        // Retrieve the result code
-                        int result = (int)resultParameter.Value;
-
-                        // Log the result
-                        logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
-
-                        return result;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
-                        return -1;
-                    }
-                    finally
-                    {
-                        connection.Close();
-                    }
-                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
+                return -1;
+            }
+            finally
+            {
+                connection.Close();
             }
         }
 
@@ -189,14 +178,7 @@ namespace ZenDeskAutomation.DataLayer.Services
             try
             {
                 string sqlCommandTimeOut = Environment.GetEnvironmentVariable("SQLCommandTimeOut");
-                if (!string.IsNullOrEmpty(sqlCommandTimeOut) && int.TryParse(sqlCommandTimeOut, out int parsedValue))
-                {
-                    return parsedValue;
-                }
-                else
-                {
-                    return 300;
-                }
+                return !string.IsNullOrEmpty(sqlCommandTimeOut) && int.TryParse(sqlCommandTimeOut, out int parsedValue) ? parsedValue : 300;
             }
             catch (Exception ex)
             {
@@ -213,7 +195,7 @@ namespace ZenDeskAutomation.DataLayer.Services
         /// <returns>Returns the parsed object from the data reader.</returns>
         private static List<T> DataReaderMapToList<T>(IDataReader dataReader, ILogger logger)
         {
-            List<T> list = new List<T>();
+            List<T> list = new();
             try
             {
                 T obj = default!;

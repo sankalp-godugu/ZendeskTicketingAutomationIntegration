@@ -136,7 +136,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 string commonMessage = ConstructCommonMessage(caseTickets);
 
                 // Deserialize the JSON string
-                var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+                JObject jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
 
                 // Extract values
                 string memberAppointmentId = jsonObject?["appointment"]?["memberAppointmentId"]?.ToString();
@@ -145,7 +145,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 string hcpName = jsonObject?["appointment"]?["hcpName"]?.ToString();
 
                 // Deserialize appointmentProcessData
-                var appointmentProcessData = JsonConvert.DeserializeObject<JObject>(jsonObject?["appointment"]?["appointmentProcessData"]?.ToString());
+                JObject appointmentProcessData = JsonConvert.DeserializeObject<JObject>(jsonObject?["appointment"]?["appointmentProcessData"]?.ToString());
                 string dateOfService = DateUtils.GetDateString(Convert.ToDateTime(appointmentProcessData?["DateOfService"]));
 
                 string resolutionMessage = ConstructResolutionMessage(caseTickets);
@@ -182,7 +182,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             {
                 string commonMessage = ConstructCommonMessage(caseTickets);
 
-                var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+                JObject jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
 
                 // Accessing TransactionDate, TransactionDetails, and Reason
                 string transactionDate = jsonObject?["TransactionDate"]?.ToString();
@@ -222,7 +222,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             {
                 string commonMessage = ConstructCommonMessage(caseTickets);
 
-                var jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
+                JObject jsonObject = JsonConvert.DeserializeObject<JObject>(caseTickets.CaseTicketData);
 
                 // Accessing TransactionDate, TransactionDetails, and Reason
                 string fromWalletValue = jsonObject?["FromWalletValue"]?.ToString();
@@ -266,10 +266,10 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 JsonDocument jsonDocument = JsonDocument.Parse(caseTickets?.CaseTicketData);
 
                 // Access individual properties using the GetPropertyValue method
-                var fromWallet = GetPropertyValue(jsonDocument, "FromWalletValue");
-                var toWallet = GetPropertyValue(jsonDocument, "ToWalletValue");
-                var balanceAmount = GetPropertyValue(jsonDocument, "BalanceAmount");
-                var reasonForMissingFunds = GetPropertyValue(jsonDocument, "Reason");
+                string fromWallet = GetPropertyValue(jsonDocument, "FromWalletValue");
+                string toWallet = GetPropertyValue(jsonDocument, "ToWalletValue");
+                string balanceAmount = GetPropertyValue(jsonDocument, "BalanceAmount");
+                string reasonForMissingFunds = GetPropertyValue(jsonDocument, "Reason");
 
                 // Resolution message.
                 string resolutionMessage = ConstructResolutionMessage(caseTickets);
@@ -314,7 +314,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 // Access individual properties using the GetPropertyValue method
                 string reasonForCardHolderAddressUpdate = GetPropertyValue(jsonDocument, "reason.value");
                 // Build the newFISAddress string without adding empty components
-                List<string> addressComponents = new List<string>
+                List<string> addressComponents = new()
                 {
                     GetPropertyValue(jsonDocument, "address.firstname"),
                     GetPropertyValue(jsonDocument, "address.lastname"),
@@ -370,7 +370,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 // Access individual properties using the GetPropertyValue method
                 string reasonForCardReplacement = GetPropertyValue(jsonDocument, "reason.value");
                 // Build the mailingAddress string without adding empty components
-                List<string> mailingAddressComponents = new List<string>
+                List<string> mailingAddressComponents = new()
                 {
                     GetPropertyValue(jsonDocument, "address.firstname"),
                     GetPropertyValue(jsonDocument, "address.lastname"),
@@ -465,21 +465,21 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 string orderInformation = GetOrderInformation(root);
 
                 // HA Item Information
-                StringBuilder haItemsInformation = new StringBuilder();
+                StringBuilder haItemsInformation = new();
                 decimal totalPriceImpacted = 0;
                 string totalPriceImpactedMessage = string.Empty;
 
                 if (root.ItemInfo != null && root.ItemInfo.Count > 0)
                 {
-                    foreach (var haItem in root.ItemInfo)
+                    foreach (ItemInfo haItem in root.ItemInfo)
                     {
-                        haItemsInformation.AppendLine($"Item ID: {haItem?.ItemId}");
-                        haItemsInformation.AppendLine($"Total Quantity: {haItem?.TotalQuantity}");
-                        haItemsInformation.AppendLine($"Price: ${haItem?.Price}");
-                        haItemsInformation.AppendLine($"Member Issue: {haItem.Issue?.FirstOrDefault()?.IssueName}");
-                        haItemsInformation.AppendLine($"Impacted Quantity: {haItem?.ImpactedQuantity}");
-                        haItemsInformation.AppendLine($"Impacted Price: ${haItem?.ImpactedPrice}");
-                        haItemsInformation.AppendLine();
+                        _ = haItemsInformation.AppendLine($"Item ID: {haItem?.ItemId}");
+                        _ = haItemsInformation.AppendLine($"Total Quantity: {haItem?.TotalQuantity}");
+                        _ = haItemsInformation.AppendLine($"Price: ${haItem?.Price}");
+                        _ = haItemsInformation.AppendLine($"Member Issue: {haItem.Issue?.FirstOrDefault()?.IssueName}");
+                        _ = haItemsInformation.AppendLine($"Impacted Quantity: {haItem?.ImpactedQuantity}");
+                        _ = haItemsInformation.AppendLine($"Impacted Price: ${haItem?.ImpactedPrice}");
+                        _ = haItemsInformation.AppendLine();
 
                         totalPriceImpacted += haItem.ImpactedPrice;
                     }
@@ -574,7 +574,7 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
             string additionalInfoValue = null;
 
             // Access the "additinalinfro" field
-            if (jsonDocument.RootElement.TryGetProperty("additinalinfro", out var additionalInfoElement))
+            if (jsonDocument.RootElement.TryGetProperty("additinalinfro", out JsonElement additionalInfoElement))
             {
                 additionalInfoValue = additionalInfoElement.GetString();
             }
@@ -610,9 +610,9 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
         {
             JsonElement element = jsonDocument.RootElement;
 
-            foreach (var property in propertyPath.Split('.'))
+            foreach (string property in propertyPath.Split('.'))
             {
-                if (element.TryGetProperty(property, out var nextElement))
+                if (element.TryGetProperty(property, out JsonElement nextElement))
                 {
                     element = nextElement;
                 }
@@ -623,18 +623,13 @@ namespace ZenDeskTicketProcessJob.SchemaTemplateLayer.Services
                 }
             }
 
-            switch (element.ValueKind)
+            return element.ValueKind switch
             {
-                case JsonValueKind.String:
-                    return element.GetString();
-                case JsonValueKind.Number:
-                    return element.ToString();
-                case JsonValueKind.True:
-                case JsonValueKind.False:
-                    return element.GetBoolean().ToString();
-                default:
-                    return element.ToString();
-            }
+                JsonValueKind.String => element.GetString(),
+                JsonValueKind.Number => element.ToString(),
+                JsonValueKind.True or JsonValueKind.False => element.GetBoolean().ToString(),
+                _ => element.ToString(),
+            };
         }
 
 

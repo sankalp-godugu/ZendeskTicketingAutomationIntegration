@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ZenDeskAutomation.DataLayer.Interfaces
+namespace ZenDeskTicketProcessJob.DataLayer.Interfaces
 {
     // Interface for data layer.
     public interface IDataLayer

@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using ZenDeskTicketProcessJob.Models;
 
-namespace ZenDeskAutomation.ZenDeskLayer.Interfaces
+namespace ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces
 {
     /// <summary>
     /// Interface for 

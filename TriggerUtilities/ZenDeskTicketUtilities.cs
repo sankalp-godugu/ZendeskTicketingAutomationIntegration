@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ZenDeskAutomation.DataLayer.Interfaces;
-using ZenDeskAutomation.Utilities;
-using ZenDeskAutomation.ZenDeskLayer.Interfaces;
+using ZenDeskTicketProcessJob.DataLayer.Interfaces;
 using ZenDeskTicketProcessJob.Models;
+using ZenDeskTicketProcessJob.Utilities;
+using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
 
 namespace ZenDeskTicketProcessJob.TriggerUtilities
 {
@@ -32,7 +32,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         {
             try
             {
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     _logger?.LogInformation("********* Case Management Ticket(CMT) => ZenDesk Execution Started **********");
 
@@ -40,7 +40,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                     string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
 
                     // SQL parameters.
-                    var sqlParams = new Dictionary<string, object>
+                    Dictionary<string, object> sqlParams = new()
                     {
                         {"@date", _configuration["CurrentDate"]},
                         {"@count", _configuration["Count"] }
@@ -48,13 +48,13 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                     _logger?.LogInformation("Started fetching the case tickets for all members");
 
-                    var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetAllCaseTicketsForAllMembers, sqlParams, CRMConnectionString, _logger);
+                    List<CaseTickets> caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetAllCaseTicketsForAllMembers, sqlParams, CRMConnectionString, _logger);
 
                     _logger?.LogInformation($"Ended fetching the case tickets with count: {caseManagementTickets?.Count}");
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
 
-                    foreach (var caseManagementTicket in caseManagementTickets)
+                    foreach (CaseTickets caseManagementTicket in caseManagementTickets)
                     {
                         if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && Convert.ToInt64(caseManagementTicket?.ZendeskTicket) > 0)
                         {
@@ -62,7 +62,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                             await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, Convert.ToInt64(caseManagementTicket?.ZendeskTicket), 2, _dataLayer);
 
-                            var ticketNumberReference = await _zdClientService?.UpdateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
+                            long ticketNumberReference = await _zdClientService?.UpdateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
@@ -75,7 +75,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                             await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, 0, 2, _dataLayer);
 
-                            var ticketNumberReference = await _zdClientService.CreateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
+                            long ticketNumberReference = await _zdClientService.CreateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
@@ -109,7 +109,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         {
             try
             {
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     _logger?.LogInformation("********* Admin Portal => ZenDesk Execution Started **********");
 
@@ -117,7 +117,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                     string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
 
                     // SQL parameters.
-                    var sqlParams = new Dictionary<string, object>
+                    Dictionary<string, object> sqlParams = new()
                     {
                         {"@date", _configuration["AdminCurrentDate"]},
                         {"@count", _configuration["AdminCount"] }
@@ -125,21 +125,21 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                     _logger?.LogInformation("Started fetching the refund and reship over the counter orders");
 
-                    var orderChangeRequestIds = await _dataLayer.ExecuteReader<OrderChangeRequest>(SQLConstants.GetOrderChangeRequestsForZenDeskIntegration, sqlParams, CRMConnectionString, _logger);
+                    List<OrderChangeRequest> orderChangeRequestIds = await _dataLayer.ExecuteReader<OrderChangeRequest>(SQLConstants.GetOrderChangeRequestsForZenDeskIntegration, sqlParams, CRMConnectionString, _logger);
 
                     _logger?.LogInformation($"Ended fetching the refund and reship over the counter orders with count: {orderChangeRequestIds?.Count}");
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
 
-                    foreach (var orderChangeRequestId in orderChangeRequestIds)
+                    foreach (OrderChangeRequest orderChangeRequestId in orderChangeRequestIds)
                     {
 
-                        var keyValuePairs = new Dictionary<string, object>
+                        Dictionary<string, object> keyValuePairs = new()
                         {
                             {"@OrderChangeRequestId", orderChangeRequestId.OrderChangeRequestId}
                         };
 
-                        var orderChangeRequest = (await _dataLayer.ExecuteReader<Order>(SQLConstants.GetOrderDetailsForZenDeskIntegrationByChangeRequestId, keyValuePairs, CRMConnectionString, _logger)).FirstOrDefault();
+                        Order orderChangeRequest = (await _dataLayer.ExecuteReader<Order>(SQLConstants.GetOrderDetailsForZenDeskIntegrationByChangeRequestId, keyValuePairs, CRMConnectionString, _logger)).FirstOrDefault();
 
                         if (orderChangeRequest != null)
                         {
@@ -150,7 +150,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                                 await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, Convert.ToInt64(orderChangeRequest?.TicketId), 2, _dataLayer);
 
-                                var ticketNumberReference = await _zdClientService?.UpdateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
+                                long ticketNumberReference = await _zdClientService?.UpdateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
 
                                 _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
 
@@ -163,7 +163,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
 
                                 await UpdatesAdminZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, orderChangeRequest, 0, 2, _dataLayer);
 
-                                var ticketNumberReference = await _zdClientService.CreateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
+                                long ticketNumberReference = await _zdClientService.CreateAdminTicketInZenDeskAsync(orderChangeRequest, _logger);
 
                                 _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the order change request id: {orderChangeRequest.OrderChangeRequestId} with details {orderChangeRequest}");
 
@@ -198,7 +198,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         {
             _logger?.LogInformation($"Updating zendesk ticket details with caseticket id :{caseManagementTicket?.ZendeskTicket}");
 
-            var result = await _dataLayer.ExecuteNonQueryForCaseManagement(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, currentProcessId, brConnectionString, _logger);
+            int result = await _dataLayer.ExecuteNonQueryForCaseManagement(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, currentProcessId, brConnectionString, _logger);
 
             if (result == 1)
             {
@@ -228,7 +228,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
         {
             _logger?.LogInformation($"Updating zendesk ticket details with id :{order?.TicketId}");
 
-            var result = await _dataLayer.ExecuteNonQueryForAdminPortal(SQLConstants.UpdateZenDeskReferenceForOTCRefundOrReshipOrders, order.OrderChangeRequestId, ticketNumberReference, currentProcessStatus, brConnectionString, _logger);
+            int result = await _dataLayer.ExecuteNonQueryForAdminPortal(SQLConstants.UpdateZenDeskReferenceForOTCRefundOrReshipOrders, order.OrderChangeRequestId, ticketNumberReference, currentProcessStatus, brConnectionString, _logger);
 
             if (result == 1)
             {

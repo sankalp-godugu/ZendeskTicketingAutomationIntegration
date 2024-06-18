@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ZenDeskTicketProcessJob.Models
+﻿namespace ZenDeskTicketProcessJob.Models
 {
     /// <summary>
     /// Order.
