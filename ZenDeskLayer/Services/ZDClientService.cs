@@ -8,12 +8,11 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using ZenDeskTicketProcessJob.Models;
-using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
-using ZenDeskTicketProcessJob.Utilities;
-using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.Models;
+using ZendeskTicketProcessingJobAP.Utilities;
+using ZendeskTicketProcessingJobAP.ZendeskLayer.Interfaces;
 
-namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
+namespace ZendeskTicketProcessingJobAP.ZendeskLayer.Services
 {
     /// <summary>
     /// Zendesk client service.
@@ -23,7 +22,6 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
         #region Private Fields
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
-        private readonly ISchemaTemplateService _schemaTemplateService;
         #endregion
 
         #region Constructor
@@ -33,11 +31,10 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
         /// </summary>
         /// <param name="httpClientFactory">Http client factory. <see cref="IHttpClientFactory"/></param>
         /// <param name="configuration">Configuration. <see cref="IConfiguration"/></param>
-        public ZDClientService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ISchemaTemplateService schemaTemplateService)
+        public ZDClientService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _schemaTemplateService = schemaTemplateService ?? throw new ArgumentNullException(nameof(schemaTemplateService));
         }
         #endregion
 
@@ -85,8 +82,8 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
             httpClient.BaseAddress = new Uri(_configuration["ZenDesk:AppConfigurations:BaseURL"]);
 
             // Get username and password from options
-            string username = _configuration["ZenDesk:AppConfigurations:UserName"];
-            string password = _configuration["ZenDesk:AppConfigurations:Password"];
+            string username = _configuration["Zendesk:AppConfigurations:UserName"];
+            string password = _configuration["Zendesk:AppConfigurations:Password"];
 
             // Convert the username and password to Base64
             string base64Credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
@@ -194,12 +191,12 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
                     ticket = new
                     {
                         assignee_email = _configuration["Email"],
-                        brand_id = _configuration["BrandValue"],
-                        group_id = _configuration["GroupValue"],
+                        brand_id = _configuration["BrandId"],
+                        group_id = _configuration["GroupId"],
                         description = descriptionOrComment,
                         custom_fields = new[]
                         {
-                            new { id = _configuration["NH/EHID"], value = order?.NHMemberId },
+                            new { id = _configuration["NhId"], value = order?.NHMemberId },
                             new { id = _configuration["MemberName"], value = order?.UserName },
                             new { id = _configuration["CarrierName-FromNBDb"], value = carrierTag }
                         },
@@ -211,7 +208,7 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
                         requester = new { email = _configuration["Email"] },
                         custom_status_id = GetCustomStatusIdForOTCOrders(order.Status),
                         subject = zenDeskSubject,
-                        ticket_form_id = _configuration["TicketFormValue"],
+                        ticket_form_id = _configuration["TicketFormId"],
                         tags = new List<string>(),
                         comment = new { body = order?.TicketId != null && order?.TicketId?.Length > 0 ? descriptionOrComment : null }
                     }
@@ -263,7 +260,7 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
                 using HttpClient httpClient = GetZenDeskHttpClient();
 
                 // Make the API request
-                HttpResponseMessage response = await httpClient.PutAsync(_configuration["ZenDesk:ApiEndPoints:UpdateTicket"] + zendeskTicketId, content);
+                HttpResponseMessage response = await httpClient.PutAsync(_configuration["Zendesk:ApiEndPoints:UpdateTicket"] + zendeskTicketId, content);
 
                 // Check if the request was successful
                 if (response.IsSuccessStatusCode)
@@ -300,7 +297,7 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
             // Gets the zendesk http client.
             using HttpClient httpClient = GetZenDeskHttpClient();
             // Make the API request
-            HttpResponseMessage response = await httpClient.PostAsync(_configuration["ZenDesk:ApiEndPoints:CreateTicket"], content);
+            HttpResponseMessage response = await httpClient.PostAsync(_configuration["Zendesk:ApiEndPoints:CreateTicket"], content);
 
             // Check if the request was successful
             if (response.IsSuccessStatusCode)
@@ -322,16 +319,6 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
                 logger.LogError($"Failed to call the create zendesk API with response: {response}");
                 return 0;
             }
-        }
-
-        public Task<long> CreateCMTTicketInZenDeskAsync(CaseTickets caseTickets, ILogger logger)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<long> UpdateCMTTicketInZenDeskAsync(CaseTickets caseTicket, ILogger logger)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion

@@ -3,16 +3,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;
-using ZenDeskTicketProcessJob;
-using ZenDeskTicketProcessJob.DataLayer.Interfaces;
-using ZenDeskTicketProcessJob.SchemaTemplateLayer.Interfaces;
-using ZenDeskTicketProcessJob.SchemaTemplateLayer.Services;
-using ZenDeskTicketProcessJob.Utilities;
-using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
-using ZenDeskTicketProcessJob.ZenDeskLayer.Services;
+using ZendeskTicketProcessingJobAP;
+using ZendeskTicketProcessingJobAP.DataLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.Utilities;
+using ZendeskTicketProcessingJobAP.ZendeskLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.ZendeskLayer.Services;
 
 [assembly: FunctionsStartup(typeof(Startup))]
-namespace ZenDeskTicketProcessJob
+namespace ZendeskTicketProcessingJobAP
 {
     /// <summary>
     /// Startup.
@@ -57,15 +55,8 @@ namespace ZenDeskTicketProcessJob
             {
                 IHttpClientFactory httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
                 IConfiguration configuration = s.GetRequiredService<IConfiguration>();
-                ISchemaTemplateService schemaTemplateService = s.GetRequiredService<ISchemaTemplateService>();
-                return new ZDClientService(httpClientFactory, configuration, schemaTemplateService);
+                return new ZDClientService(httpClientFactory, configuration);
             });
-
-            _ = builder.Services.AddSingleton<ISchemaTemplateService>((s) =>
-            {
-                return new SchemaTemplateService();
-            });
-
         }
     }
 

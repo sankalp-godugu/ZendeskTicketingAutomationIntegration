@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 
-namespace ZenDeskTicketProcessJob.Utilities
+namespace ZendeskTicketProcessingJobAP.Utilities
 {
     /// <summary>
     /// Names with tags constants.

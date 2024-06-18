@@ -5,12 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ZenDeskTicketProcessJob.DataLayer.Interfaces;
-using ZenDeskTicketProcessJob.Models;
-using ZenDeskTicketProcessJob.Utilities;
-using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.DataLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.Models;
+using ZendeskTicketProcessingJobAP.Utilities;
+using ZendeskTicketProcessingJobAP.ZendeskLayer.Interfaces;
 
-namespace ZenDeskTicketProcessJob.TriggerUtilities
+namespace ZendeskTicketProcessingJobAP.TriggerUtilities
 {
 
     /// <summary>
@@ -40,8 +40,8 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                     // SQL parameters.
                     Dictionary<string, object> sqlParams = new()
                     {
-                        {"@date", _configuration["AdminCurrentDate"]},
-                        {"@count", _configuration["AdminCount"] }
+                        {"@date", _configuration["FromDate"]},
+                        {"@count", _configuration["Count"] }
                     };
 
                     _logger?.LogInformation("Started fetching the refund and reship over the counter orders");
@@ -93,7 +93,7 @@ namespace ZenDeskTicketProcessJob.TriggerUtilities
                         }
                     }
 
-                    _logger?.LogInformation("********* Case Management Ticket(CMT) => ZenDesk Execution Ended *********");
+                    _logger?.LogInformation("********* Admin Portal Ticket(AP) => ZenDesk Execution Ended *********");
 
                 });
 

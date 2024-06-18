@@ -6,9 +6,9 @@ using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using ZenDeskTicketProcessJob.DataLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.DataLayer.Interfaces;
 
-namespace ZenDeskTicketProcessJob.DataLayer.Services
+namespace ZendeskTicketProcessingJobAP.DataLayer.Services
 {
     /// <summary>
     /// Data Layer.
@@ -64,60 +64,6 @@ namespace ZenDeskTicketProcessJob.DataLayer.Services
         /// </summary>
         /// <typeparam name="T">Generic parameter.</typeparam>
         /// <param name="procedureName">Procedure name.</param>
-        /// <param name="caseTicketId">Case ticket id</param>
-        /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
-        /// <param name="currentProcessId">Current process id.</param>
-        /// <param name="logger">Logger</param>
-        /// <param name="connectionString">Connection string.</param>
-        /// <returns>Returns the collection of objects.</returns>
-        public async Task<int> ExecuteNonQueryForCaseManagement(string procedureName, long? caseTicketId, long zenDeskTicketId, long currentProcessId, string connectionString, ILogger logger)
-        {
-            using SqlConnection connection = new(connectionString);
-            await connection.OpenAsync();
-
-            using SqlCommand command = new(procedureName, connection);
-            command.CommandType = CommandType.StoredProcedure;
-
-            // Input parameters
-            _ = command.Parameters.AddWithValue("@caseTicketId", caseTicketId);
-            _ = command.Parameters.AddWithValue("@ZenDeskTicketID", zenDeskTicketId);
-            _ = command.Parameters.AddWithValue("@IsProcessed", currentProcessId);
-
-            // Output parameter
-            SqlParameter resultParameter = new("@Result", SqlDbType.Int)
-            {
-                Direction = ParameterDirection.Output
-            };
-            _ = command.Parameters.Add(resultParameter);
-
-            try
-            {
-                _ = await command.ExecuteNonQueryAsync();
-
-                // Retrieve the result code
-                int result = (int)resultParameter.Value;
-
-                // Log the result
-                logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Error updating ZenDesk reference: {ex.Message}");
-                return -1;
-            }
-            finally
-            {
-                connection.Close();
-            }
-        }
-
-        /// <summary>
-        /// Inserts the data into the table.
-        /// </summary>
-        /// <typeparam name="T">Generic parameter.</typeparam>
-        /// <param name="procedureName">Procedure name.</param>
         /// <param name="orderChangeRequestId">orderChangeRequestId</param>
         /// <param name="zenDeskTicketId">Zen desk ticket id.</param>
         /// <param name="currentProcessStatus">Current process status.</param>
@@ -152,7 +98,7 @@ namespace ZenDeskTicketProcessJob.DataLayer.Services
                 int result = (int)resultParameter.Value;
 
                 // Log the result
-                logger.LogInformation($"UpdateZenDeskReferenceForMemberCaseTickets result: {result}");
+                logger.LogInformation($"ExecuteNonQueryForAdminPortal result: {result}");
 
                 return result;
             }

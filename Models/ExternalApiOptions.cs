@@ -1,4 +1,4 @@
-﻿namespace ZenDeskTicketProcessJob.Models
+﻿namespace ZendeskTicketProcessingJobAP.Models
 {
     /// <summary>
     /// External api options.

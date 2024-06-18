@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ZenDeskTicketProcessJob.Utilities
+namespace ZendeskTicketProcessingJobAP.Utilities
 {
     public static class DateUtils
     {

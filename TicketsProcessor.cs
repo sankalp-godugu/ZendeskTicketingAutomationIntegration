@@ -9,11 +9,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Net;
-using ZenDeskTicketProcessJob.DataLayer.Interfaces;
-using ZenDeskTicketProcessJob.TriggerUtilities;
-using ZenDeskTicketProcessJob.ZenDeskLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.DataLayer.Interfaces;
+using ZendeskTicketProcessingJobAP.TriggerUtilities;
+using ZendeskTicketProcessingJobAP.ZendeskLayer.Interfaces;
 
-namespace ZenDeskTicketProcessJob
+namespace ZendeskTicketProcessingJobAP
 {
 
 
@@ -22,7 +22,6 @@ namespace ZenDeskTicketProcessJob
     /// </summary>
     public class AdminAzureHttpFunction
     {
-
         #region Private ReadOnly Fields
         private readonly IDataLayer _dataLayer;
         private readonly IConfiguration _configuration;
@@ -96,10 +95,10 @@ namespace ZenDeskTicketProcessJob
         /// Runs the azure function for every one minute.
         /// </summary>
         /// <param name="myTimer">My timer.</param>
-        [FunctionName("AdminAzureTimerFunction")]
+        [FunctionName("AdminPortalAzureTimerFunction")]
         public void Run([TimerTrigger("0 * * * * *")] TimerInfo myTimer, ILogger logger)
         {
-            if (_configuration.GetValue("IsAdminJobEnabled", true))
+            if (_configuration.GetValue("IsJobEnabled", true))
             {
                 _ = ZenDeskTicketUtilities.ProcessAdminZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
             }

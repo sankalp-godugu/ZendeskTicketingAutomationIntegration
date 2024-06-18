@@ -1,4 +1,4 @@
-﻿namespace ZenDeskTicketProcessJob.Utilities
+﻿namespace ZendeskTicketProcessingJobAP.Utilities
 {
     /// <summary>
     /// SQL constants.
