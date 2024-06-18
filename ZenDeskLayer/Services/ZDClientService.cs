@@ -44,32 +44,6 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
         #region Public Methods
 
         /// <summary>
-        /// Creates the ticket in zendesk asychronously.
-        /// </summary>
-        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
-        /// <param name="logger">Logger.<see cref="ILogger"/></param>
-        /// <returns>Returns the ticket id of the created zendesk.</returns>
-        public async Task<long> CreateCMTTicketInZenDeskAsync(CaseTickets caseTicket, ILogger logger)
-        {
-            // Gets the request body for the zendesk client.
-            StringContent content = GetCMTRequestBodyForZenDesk(caseTicket, logger);
-            return await CreateZendeskTicketWithPassedInformation(logger, content);
-        }
-
-        /// <summary>
-        /// Update the ticket in zendesk.
-        /// </summary>
-        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
-        /// <param name="logger">Logger.<see cref="ILogger"/></param>
-        /// <returns>Returns the ticket id from the zendesk.</returns>
-        public async Task<long> UpdateCMTTicketInZenDeskAsync(CaseTickets caseTicket, ILogger logger)
-        {
-            // Gets the request body for the zendesk API request.
-            StringContent content = GetCMTRequestBodyForZenDesk(caseTicket, logger);
-            return await UpdateExistingZendeskTicketWithStringContent(caseTicket.ZendeskTicket, logger, content);
-        }
-
-        /// <summary>
         /// Creates the admin ticket in zendesk asychronously.
         /// </summary>
         /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
@@ -133,67 +107,6 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
         {
             string carrierName = (insuranceCarrierName ?? string.Empty).ToString()?.Replace(" ", "").Trim().ToLower();
             return $"carrier_{carrierName}_{insuranceCarrierID}";
-        }
-
-
-        /// <summary>
-        /// Gets the CMT request body for zendesk.
-        /// </summary>
-        /// <param name="caseTicket">Case ticket.<see cref="CaseTickets"/></param>
-        /// <returns>Returns the string content.</returns>
-        private StringContent GetCMTRequestBodyForZenDesk(CaseTickets caseTicket, ILogger logger)
-        {
-            try
-            {
-                // Constructs the zendesk fields.
-                string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
-                string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
-
-                string descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
-
-                // Create the dynamic object
-                var dynamicTicket = new
-                {
-                    ticket = new
-                    {
-                        assignee_email = _configuration["Email"],
-                        brand_id = _configuration["BrandValue"],
-                        group_id = _configuration["GroupValue"],
-                        description = descriptionOrComment,
-                        custom_fields = new[]
-                        {
-                            new { id = _configuration["NH/EHID"], value = caseTicket?.NHMemberID },
-                            new { id = _configuration["MemberName"], value = caseTicket?.MemberName },
-                            new { id = _configuration["CarrierName-FromNBDb"], value = carrierTag },
-                            //new { id = _configuration["Assignee"], value = caseTicket.AssignedTo },
-                            new { id = _configuration["PlanName"], value = caseTicket?.HealthPlanName },
-                        },
-                        email_ccs = new[]
-                            {
-                            new { user_email = _configuration["Email"], action = "put" }
-                        },
-                        priority = "high",
-                        requester = new { email = _configuration["Email"] },
-                        custom_status_id = caseTicket.CaseTopic is CaseTopicConstants.Reimbursement or CaseTopicConstants.WalletTransfer ? NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus) : NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
-                        subject = zenDeskSubject,
-                        ticket_form_id = _configuration["TicketFormValue"],
-                        tags = new List<string>(),
-                        comment = new { body = caseTicket?.ZendeskTicket != null && caseTicket?.ZendeskTicket?.Length > 0 ? descriptionOrComment : null }
-                    }
-                };
-
-                // Serialize the dynamic object to JSON
-                string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
-
-                // Create StringContent from JSON payload
-                StringContent content = new(jsonPayload, Encoding.UTF8, "application/json");
-                return content;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Failed in processing the request body for zendesk with exception message: {ex.Message}");
-                return null;
-            }
         }
 
         /// <summary>
@@ -335,41 +248,6 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
             };
         }
 
-
-
-        /// <summary>
-        /// Gets the ticket description from the case topic.
-        /// </summary>
-        /// <param name="caseTickets">Case tickets.<see cref="CaseTickets"/></param>
-        /// <returns>Returns the ticket description from the case topic.</returns>
-        private string GetTicketDescriptionFromCaseTopic(CaseTickets caseTickets, ILogger logger)
-        {
-            return (caseTickets?.CaseTopic) switch
-            {
-                CaseTopicConstants.ItemRelatedIssues => _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets, logger),
-                CaseTopicConstants.ShipmentRelatedIssues => _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets, logger),
-                CaseTopicConstants.HearingAidIssues => _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger),
-                CaseTopicConstants.ProviderIssues => _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets, logger),
-                CaseTopicConstants.BillingIssues => _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets, logger),
-                CaseTopicConstants.UserAgreementsNotReceived => "Description for User Agreements (Not received)",
-                CaseTopicConstants.WrongItemReceived => "Description for Wrong Item received",
-                CaseTopicConstants.DeviceIssue => "Description for Device Issue",
-                CaseTopicConstants.BalanceNotLoaded => "Description for Balance not loaded",
-                CaseTopicConstants.WrongWalletCharged => "Description for Wrong wallet charged",
-                CaseTopicConstants.TransactionDeclined => "Description for Transaction declined",
-                CaseTopicConstants.Others => _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger),
-                CaseTopicConstants.Reimbursement => _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets, logger),
-                CaseTopicConstants.WalletTransfer => _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets, logger),
-                CaseTopicConstants.CardReplacement => _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets, logger),
-                CaseTopicConstants.CardholderAddressUpdate => _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets, logger),
-                CaseTopicConstants.ChangeCardStatus => _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets, logger),
-                CaseTopicConstants.RequestVoucher => "Description for Request Voucher",
-                CaseTopicConstants.CardDeclined => _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets, logger),
-                CaseTopicConstants.FlexIssue => _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets, logger),
-                _ => "Unknown Case Topic",
-            };
-        }
-
         /// <summary>
         /// Updates the existing zendesk ticket with string content.
         /// </summary>
@@ -444,6 +322,16 @@ namespace ZenDeskTicketProcessJob.ZenDeskLayer.Services
                 logger.LogError($"Failed to call the create zendesk API with response: {response}");
                 return 0;
             }
+        }
+
+        public Task<long> CreateCMTTicketInZenDeskAsync(CaseTickets caseTickets, ILogger logger)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<long> UpdateCMTTicketInZenDeskAsync(CaseTickets caseTicket, ILogger logger)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

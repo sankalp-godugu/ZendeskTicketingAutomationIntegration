@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ZenDeskTicketProcessJob.Models
 {
-    public class ZenDeskTicketResponse
+    public class ZendeskTicketResponse
     {
         public int AssigneeId { get; set; }
         public List<int> CollaboratorIds { get; set; }
@@ -48,10 +48,4 @@ namespace ZenDeskTicketProcessJob.Models
         public int Id { get; set; }
         public string Score { get; set; }
     }
-
-    public class Via
-    {
-        public string Channel { get; set; }
-    }
-
 }

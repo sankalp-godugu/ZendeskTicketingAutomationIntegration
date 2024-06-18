@@ -59,7 +59,7 @@ namespace ZenDeskTicketProcessJob.Models
         public object Rel { get; set; }
     }
 
-    public class ZenDeskTicket
+    public class ZendeskTicket
     {
         public List<Ticket> Tickets { get; set; }
         public object NextPage { get; set; }
