@@ -26,7 +26,7 @@ namespace ZendeskTicketProcessingJobCMT.DataLayer.Services
         public async Task<List<T>> ExecuteReader<T>(string procedureName, Dictionary<string, object> parameters, string connectionString, ILogger logger)
         {
             logger.LogInformation($"Started calling stored procedure {procedureName} with parameters: {string.Join(", ", parameters.Select(p => $"{p.Key} = {p.Value}"))}");
-            List<T> list = new List<T>();
+            List<T> list = new();
             using SqlConnection sqlConnection = new(connectionString);
             await sqlConnection.OpenAsync();
             try
@@ -122,14 +122,7 @@ namespace ZendeskTicketProcessingJobCMT.DataLayer.Services
             try
             {
                 string sqlCommandTimeOut = Environment.GetEnvironmentVariable("SQLCommandTimeOut");
-                if (!string.IsNullOrEmpty(sqlCommandTimeOut) && int.TryParse(sqlCommandTimeOut, out int parsedValue))
-                {
-                    return parsedValue;
-                }
-                else
-                {
-                    return 300;
-                }
+                return !string.IsNullOrEmpty(sqlCommandTimeOut) && int.TryParse(sqlCommandTimeOut, out int parsedValue) ? parsedValue : 300;
             }
             catch (Exception ex)
             {
@@ -146,7 +139,7 @@ namespace ZendeskTicketProcessingJobCMT.DataLayer.Services
         /// <returns>Returns the parsed object from the data reader.</returns>
         private static List<T> DataReaderMapToList<T>(IDataReader dataReader, ILogger logger)
         {
-            List<T> list = new List<T>();
+            List<T> list = new();
             try
             {
                 T obj = default!;

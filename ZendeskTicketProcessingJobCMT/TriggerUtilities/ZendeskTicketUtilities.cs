@@ -31,7 +31,7 @@ namespace ZendeskTicketProcessingJobCMT.TriggerUtilities
         {
             try
             {
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     _logger?.LogInformation("********* Case Management Ticket(CMT) => ZenDesk Execution Started **********");
 
@@ -39,7 +39,7 @@ namespace ZendeskTicketProcessingJobCMT.TriggerUtilities
                     string CRMConnectionString = _configuration["DataBase:CRMConnectionString"];
 
                     // SQL parameters.
-                    var sqlParams = new Dictionary<string, object>
+                    Dictionary<string, object> sqlParams = new()
                     {
                         {"@date", _configuration["FromDate"]},
                         {"@count", _configuration["Count"] }
@@ -47,13 +47,13 @@ namespace ZendeskTicketProcessingJobCMT.TriggerUtilities
 
                     _logger?.LogInformation("Started fetching the case tickets for all members");
 
-                    var caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetAllCaseTicketsForAllMembers, sqlParams, CRMConnectionString, _logger);
+                    List<CaseTickets> caseManagementTickets = await _dataLayer.ExecuteReader<CaseTickets>(SQLConstants.GetAllCaseTicketsForAllMembers, sqlParams, CRMConnectionString, _logger);
 
                     _logger?.LogInformation($"Ended fetching the case tickets with count: {caseManagementTickets?.Count}");
 
                     string brConnectionString = _configuration["DataBase:BRConnectionString"];
 
-                    foreach (var caseManagementTicket in caseManagementTickets)
+                    foreach (CaseTickets caseManagementTicket in caseManagementTickets)
                     {
                         if (!string.IsNullOrWhiteSpace(caseManagementTicket?.ZendeskTicket) && Convert.ToInt64(caseManagementTicket?.ZendeskTicket) > 0)
                         {
@@ -61,7 +61,7 @@ namespace ZendeskTicketProcessingJobCMT.TriggerUtilities
 
                             await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, Convert.ToInt64(caseManagementTicket?.ZendeskTicket), 2, _dataLayer);
 
-                            var ticketNumberReference = await _zdClientService?.UpdateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
+                            long ticketNumberReference = await _zdClientService?.UpdateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger?.LogInformation($"Successfully updated zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
@@ -74,7 +74,7 @@ namespace ZendeskTicketProcessingJobCMT.TriggerUtilities
 
                             await UpdatesCMTZendeskTicketReferenceAndIsProcessedStatus(_logger, brConnectionString, caseManagementTicket, 0, 2, _dataLayer);
 
-                            var ticketNumberReference = await _zdClientService.CreateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
+                            long ticketNumberReference = await _zdClientService.CreateCMTTicketInZenDeskAsync(caseManagementTicket, _logger);
 
                             _logger?.LogInformation($"Successfully created zendesk ticket id {ticketNumberReference} for the case management ticket id: {caseManagementTicket.CaseTicketID} with details {caseManagementTicket}");
 
@@ -108,7 +108,7 @@ namespace ZendeskTicketProcessingJobCMT.TriggerUtilities
         {
             _logger?.LogInformation($"Updating zendesk ticket details with caseticket id :{caseManagementTicket?.ZendeskTicket}");
 
-            var result = await _dataLayer.ExecuteNonQueryForCaseManagement(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, currentProcessId, brConnectionString, _logger);
+            int result = await _dataLayer.ExecuteNonQueryForCaseManagement(SQLConstants.UpdateZenDeskReferenceForMemberCaseTickets, caseManagementTicket.CaseTicketID, ticketNumberReference, currentProcessId, brConnectionString, _logger);
 
             if (result == 1)
             {

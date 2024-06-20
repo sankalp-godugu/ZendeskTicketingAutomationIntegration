@@ -1,6 +1,4 @@
-﻿using ZenDeskTicketProcessJob.Models.ZenDeskTicketProcessJob.Models;
-
-namespace ZendeskTicketProcessingJobCMT.Utilities
+﻿namespace ZendeskTicketProcessingJobCMT.Utilities
 {
     /// <summary>
     /// SQL constants.

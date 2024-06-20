@@ -1,14 +1,10 @@
-﻿using Microsoft.CodeAnalysis.Operations;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using ZendeskTicketProcessingJobCMT.Models;
@@ -25,8 +21,8 @@ namespace ZendeskTicketProcessingJobCMT.ZendeskLayer.Services
     {
         #region Private Fields
         private IHttpClientFactory _httpClientFactory;
-        private IConfiguration _configuration;
-        private ISchemaTemplateService _schemaTemplateService;
+        private readonly IConfiguration _configuration;
+        private readonly ISchemaTemplateService _schemaTemplateService;
         #endregion
 
         #region Constructor
@@ -126,7 +122,7 @@ namespace ZendeskTicketProcessingJobCMT.ZendeskLayer.Services
                 string zenDeskSubject = $"Member ID: {caseTicket?.NHMemberID} - Case Topic: {caseTicket?.CaseTopic}";
                 string carrierTag = GetTagValueFromCarrierName(caseTicket.InsuranceCarrierName, caseTicket.InsuranceCarrierID);
 
-                var descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
+                string descriptionOrComment = GetTicketDescriptionFromCaseTopic(caseTicket, logger);
 
                 // Create the dynamic object
                 var dynamicTicket = new
@@ -151,7 +147,7 @@ namespace ZendeskTicketProcessingJobCMT.ZendeskLayer.Services
                         },
                         priority = "high",
                         requester = new { email = _configuration["Email"] },
-                        custom_status_id = CaseTopicConstants.Reimbursement == caseTicket.CaseTopic || CaseTopicConstants.WalletTransfer == caseTicket.CaseTopic ? NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus) : NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
+                        custom_status_id = caseTicket.CaseTopic is CaseTopicConstants.Reimbursement or CaseTopicConstants.WalletTransfer ? NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus) : NamesWithTagsConstants.GetTagValueByTicketStatus(caseTicket?.CaseTicketStatus + " " + caseTicket?.ApprovedStatus),
                         subject = zenDeskSubject,
                         ticket_form_id = _configuration["TicketFormId"],
                         tags = new List<string>(),
@@ -163,7 +159,7 @@ namespace ZendeskTicketProcessingJobCMT.ZendeskLayer.Services
                 string jsonPayload = JsonConvert.SerializeObject(dynamicTicket, Formatting.Indented);
 
                 // Create StringContent from JSON payload
-                StringContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                StringContent content = new(jsonPayload, Encoding.UTF8, "application/json");
                 return content;
             }
             catch (Exception ex)
@@ -180,71 +176,30 @@ namespace ZendeskTicketProcessingJobCMT.ZendeskLayer.Services
         /// <returns>Returns the ticket description from the case topic.</returns>
         private string GetTicketDescriptionFromCaseTopic(CaseTickets caseTickets, ILogger logger)
         {
-            switch (caseTickets?.CaseTopic)
+            return (caseTickets?.CaseTopic) switch
             {
-                case CaseTopicConstants.ItemRelatedIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.ShipmentRelatedIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.HearingAidIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.ProviderIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.BillingIssues:
-                    return _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.UserAgreementsNotReceived:
-                    return "Description for User Agreements (Not received)";
-
-                case CaseTopicConstants.WrongItemReceived:
-                    return "Description for Wrong Item received";
-
-                case CaseTopicConstants.DeviceIssue:
-                    return "Description for Device Issue";
-
-                case CaseTopicConstants.BalanceNotLoaded:
-                    return "Description for Balance not loaded";
-
-                case CaseTopicConstants.WrongWalletCharged:
-                    return "Description for Wrong wallet charged";
-
-                case CaseTopicConstants.TransactionDeclined:
-                    return "Description for Transaction declined";
-
-                case CaseTopicConstants.Others:
-                    return _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.Reimbursement:
-                    return _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.WalletTransfer:
-                    return _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.CardReplacement:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.CardholderAddressUpdate:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.ChangeCardStatus:
-                    return _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.RequestVoucher:
-                    return "Description for Request Voucher";
-
-                case CaseTopicConstants.CardDeclined:
-                    return _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets, logger);
-
-                case CaseTopicConstants.FlexIssue:
-                    return _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets, logger);
-
-                default:
-                    return "Unknown Case Topic";
-            }
+                CaseTopicConstants.ItemRelatedIssues => _schemaTemplateService.GetSchemaDefinitionForOTCCaseTopic(caseTickets, logger),
+                CaseTopicConstants.ShipmentRelatedIssues => _schemaTemplateService.GetSchemaDefinitionForShipmentRelatedIssuesCaseTopic(caseTickets, logger),
+                CaseTopicConstants.HearingAidIssues => _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger),
+                CaseTopicConstants.ProviderIssues => _schemaTemplateService.GetSchemaDefinitionForProviderIssuesCaseTopic(caseTickets, logger),
+                CaseTopicConstants.BillingIssues => _schemaTemplateService.GetSchemaDefinitionForBillingIssuesCaseTopic(caseTickets, logger),
+                CaseTopicConstants.UserAgreementsNotReceived => "Description for User Agreements (Not received)",
+                CaseTopicConstants.WrongItemReceived => "Description for Wrong Item received",
+                CaseTopicConstants.DeviceIssue => "Description for Device Issue",
+                CaseTopicConstants.BalanceNotLoaded => "Description for Balance not loaded",
+                CaseTopicConstants.WrongWalletCharged => "Description for Wrong wallet charged",
+                CaseTopicConstants.TransactionDeclined => "Description for Transaction declined",
+                CaseTopicConstants.Others => _schemaTemplateService.GetSchemaDefinitionForHearingAidCaseTopic(caseTickets, logger),
+                CaseTopicConstants.Reimbursement => _schemaTemplateService.GetSchemaDefinitionForReimbursementRequestCaseTopic(caseTickets, logger),
+                CaseTopicConstants.WalletTransfer => _schemaTemplateService.GetSchemaDefinitionForWalletTransferCaseTopic(caseTickets, logger),
+                CaseTopicConstants.CardReplacement => _schemaTemplateService.GetSchemaDefinitionForCardReplacementCaseTopic(caseTickets, logger),
+                CaseTopicConstants.CardholderAddressUpdate => _schemaTemplateService.GetSchemaDefinitionForCardholderAddressUpdateCaseTopic(caseTickets, logger),
+                CaseTopicConstants.ChangeCardStatus => _schemaTemplateService.GetSchemaDefinitionForChangeCardStatusCaseTopic(caseTickets, logger),
+                CaseTopicConstants.RequestVoucher => "Description for Request Voucher",
+                CaseTopicConstants.CardDeclined => _schemaTemplateService.GetSchemaDefinitionForCardDeclinedCaseTopic(caseTickets, logger),
+                CaseTopicConstants.FlexIssue => _schemaTemplateService.GetSchemaDefinitionForFlexIssueCaseTopic(caseTickets, logger),
+                _ => "Unknown Case Topic",
+            };
         }
 
         /// <summary>
@@ -259,32 +214,30 @@ namespace ZendeskTicketProcessingJobCMT.ZendeskLayer.Services
             if (content != null)
             {
                 // HttpClient
-                using (HttpClient httpClient = GetZenDeskHttpClient())
+                using HttpClient httpClient = GetZenDeskHttpClient();
+
+                // Make the API request
+                HttpResponseMessage response = await httpClient.PutAsync(_configuration["Zendesk:ApiEndPoints:UpdateTicket"] + zendeskTicketId, content);
+
+                // Check if the request was successful
+                if (response.IsSuccessStatusCode)
                 {
+                    // Read and deserialize the response content
+                    string responseContent = await response?.Content?.ReadAsStringAsync();
 
-                    // Make the API request
-                    HttpResponseMessage response = await httpClient.PutAsync(_configuration["Zendesk:ApiEndPoints:UpdateTicket"] + zendeskTicketId, content);
+                    // Deserialize the JSON string
+                    JObject jsonResponse = JObject.Parse(responseContent);
 
-                    // Check if the request was successful
-                    if (response.IsSuccessStatusCode)
-                    {
-                        // Read and deserialize the response content
-                        string responseContent = await response?.Content?.ReadAsStringAsync();
+                    // Get the value of a specific property
+                    long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
 
-                        // Deserialize the JSON string
-                        JObject jsonResponse = JObject.Parse(responseContent);
-
-                        // Get the value of a specific property
-                        long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
-
-                        // Return the ticket identifier.
-                        return ticketIdentifier;
-                    }
-                    else
-                    {
-                        logger.LogError($"Failed to call the update zendesk API with response: {response}");
-                        return 0;
-                    }
+                    // Return the ticket identifier.
+                    return ticketIdentifier;
+                }
+                else
+                {
+                    logger.LogError($"Failed to call the update zendesk API with response: {response}");
+                    return 0;
                 }
             }
             else { return 0; }
@@ -299,31 +252,29 @@ namespace ZendeskTicketProcessingJobCMT.ZendeskLayer.Services
         private async Task<long> CreateZendeskTicketWithPassedInformation(ILogger logger, StringContent content)
         {
             // Gets the zendesk http client.
-            using (HttpClient httpClient = GetZenDeskHttpClient())
+            using HttpClient httpClient = GetZenDeskHttpClient();
+            // Make the API request
+            HttpResponseMessage response = await httpClient.PostAsync(_configuration["Zendesk:ApiEndPoints:CreateTicket"], content);
+
+            // Check if the request was successful
+            if (response.IsSuccessStatusCode)
             {
-                // Make the API request
-                HttpResponseMessage response = await httpClient.PostAsync(_configuration["Zendesk:ApiEndPoints:CreateTicket"], content);
+                // Read and deserialize the response content
+                string responseContent = await response.Content.ReadAsStringAsync();
 
-                // Check if the request was successful
-                if (response.IsSuccessStatusCode)
-                {
-                    // Read and deserialize the response content
-                    string responseContent = await response.Content.ReadAsStringAsync();
+                // Deserialize the JSON string
+                JObject jsonResponse = JObject.Parse(responseContent);
 
-                    // Deserialize the JSON string
-                    JObject jsonResponse = JObject.Parse(responseContent);
+                // Get the value of a specific property
+                long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
 
-                    // Get the value of a specific property
-                    long ticketIdentifier = Convert.ToInt64(jsonResponse["ticket"]["id"]);
-
-                    // Return the deserialized response
-                    return ticketIdentifier;
-                }
-                else
-                {
-                    logger.LogError($"Failed to call the create zendesk API with response: {response}");
-                    return 0;
-                }
+                // Return the deserialized response
+                return ticketIdentifier;
+            }
+            else
+            {
+                logger.LogError($"Failed to call the create zendesk API with response: {response}");
+                return 0;
             }
         }
 

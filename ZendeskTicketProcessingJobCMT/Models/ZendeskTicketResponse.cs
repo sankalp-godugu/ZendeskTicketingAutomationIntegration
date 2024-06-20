@@ -48,10 +48,4 @@ namespace ZendeskTicketProcessingJobCMT.Models
         public int Id { get; set; }
         public string Score { get; set; }
     }
-
-    public class Via
-    {
-        public string Channel { get; set; }
-    }
-
 }

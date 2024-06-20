@@ -42,14 +42,7 @@ namespace ZendeskTicketProcessingJobCMT.Utilities
         /// <returns>Returns the field value.</returns>
         public static string GetTagValueByTicketStatus(string ticketStatus)
         {
-            if (ticketStatusIds.TryGetValue(ticketStatus?.ToString()?.TrimEnd(), out string tagValue))
-            {
-                return tagValue;
-            }
-            else
-            {
-                return string.Empty;
-            }
+            return ticketStatusIds.TryGetValue(ticketStatus?.ToString()?.TrimEnd(), out string tagValue) ? tagValue : string.Empty;
         }
     }
 }

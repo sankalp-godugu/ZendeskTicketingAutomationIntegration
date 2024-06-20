@@ -1,5 +1,3 @@
-using System;
-using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -9,8 +7,8 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using ZendeskAutomation.DataLayer.Services;
-using ZendeskAutomation.ZenDeskLayer.Services;
+using System;
+using System.Net;
 using ZendeskTicketProcessingJobCMT.DataLayer.Interfaces;
 using ZendeskTicketProcessingJobCMT.TriggerUtilities;
 using ZendeskTicketProcessingJobCMT.ZendeskLayer.Interfaces;
@@ -100,7 +98,7 @@ namespace ZendeskTicketProcessingJobCMT
         {
             if (_configuration.GetValue("IsJobEnabled", true))
             {
-                ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
+                _ = ZenDeskTicketUtilities.ProcessCMTZenDeskTickets(logger, _configuration, _dataLayer, _zdClientService);
             }
             else
             {
